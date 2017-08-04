@@ -8,7 +8,7 @@ rmdir %1-images /q /s
 mkdir %1-images
 
 @echo generating images...
-for %%i in (%1-graphviz/*) do "D:\Program Files (x86)\Graphviz2.38\bin\dot.exe" -Tpng %1-graphviz/%%i -o %1-images/%%i.png
+for %%i in (%1-graphviz/*) do dot.exe -Tpng %1-graphviz/%%i -o %1-images/%%i.png
 
 
 goto :eof
