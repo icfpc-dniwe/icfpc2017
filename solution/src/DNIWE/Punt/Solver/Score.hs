@@ -1,30 +1,31 @@
 module DNIWE.Punt.Solver.Score
-  (
+  ( boardGame
+  , playerScore
   ) where
 
+import Control.Arrow
 import Data.Maybe
 import Data.Set (Set)
 import qualified Data.Set as S
+import Data.Map.Strict (Map)
+import qualified Data.Map.Strict as M
 import Data.Graph.Inductive.Graph
 import Data.Graph.Inductive.PatriciaTree
 import Data.Graph.Inductive.Query.DFS
-import Data.Graph.Inductive.Query.MST
+import Data.Graph.Inductive.Query.SP
 
 import DNIWE.Punt.Solver.Types
 
-score :: Board -> Player -> Int
-score board player = sum $ map (\n -> mineScore n playerBoard) mines
-  where playerBoard = emap (maybe False (== player) . taken) board
-        mines = map fst $ filter (isMine . snd) $ labNodes board
+boardGame :: IndexedBoard -> MineScores
+boardGame (IndexedBoard {..}) = M.unionsWith M.union $ map scoreOne $ S.toList ibMines
+  where scoreOne mine = M.singleton mine $ M.fromList $ map (\(LP ((dest, score):_)) -> (dest, score * score)) $ spTree mine weightedBoard
+        weightedBoard = emap (const 1) ibBoard
 
-mineReachable :: Node -> Gr a Bool -> Set Node
-mineReachable start graph = S.fromList $ xdfsWith marked (\(_, n, _, _) -> n) [start] graph
-  where marked (from, n, _, to) = map snd $ filter fst from ++ filter fst to
+playerScore :: Player -> Game -> Int
+playerScore player (Game {..}) = sum $ concatMap (\m -> map (\n -> gameScoring M.! m M.! n) $ reachedOne m) $ S.toList gameMines
+  where reachedOne mine = mineReachable player gameBoard mine
 
-mineTree :: Node -> Gr Bool b -> Int
-mineTree = undefined
-
-mineScore :: Node -> Gr a Bool -> Int
-mineScore start graph = undefined
-  where reachable = mineReachable start graph
-        newGraph = gmap (\(l, n, c, r) -> (l, n, n `S.member` reachable, r)) graph
+mineReachable :: Player -> Board -> Node -> [Node]
+mineReachable player graph start = xdfsWith marked (\(_, n, _, _) -> n) [start] graph
+  where marked (from, _, _, to) = map snd $ filterTaken from ++ filterTaken to
+        filterTaken = filter ((== Just player) . taken . fst)
