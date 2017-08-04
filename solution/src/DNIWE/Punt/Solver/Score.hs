@@ -16,18 +16,16 @@ import Data.Graph.Inductive.Query.SP
 
 import DNIWE.Punt.Solver.Types
 
-boardGame :: Board -> Game
-boardGame gameBoard = Game {..}
-  where gameMines = S.fromList $ map fst $ filter (isMine . snd) $ labNodes gameBoard
-        gameScoring = M.unionsWith M.union $ map scoreOne $ S.toList gameMines
-        scoreOne mine = M.singleton mine $ M.fromList $ map (\(LP ((dest, score):_)) -> (dest, score * score)) $ spTree mine weightedBoard
-        weightedBoard = emap (const 1) gameBoard
+boardGame :: IndexedBoard -> MineScores
+boardGame (IndexedBoard {..}) = M.unionsWith M.union $ map scoreOne $ S.toList ibMines
+  where scoreOne mine = M.singleton mine $ M.fromList $ map (\(LP ((dest, score):_)) -> (dest, score * score)) $ spTree mine weightedBoard
+        weightedBoard = emap (const 1) ibBoard
 
-playerScore :: Game -> Player -> Int
-playerScore (Game {..}) player = sum $ concatMap (\m -> map (\n -> gameScoring M.! m M.! n) $ reachedOne m) $ S.toList gameMines
-  where reachedOne mine = mineReachable gameBoard player mine
+playerScore :: Player -> Game -> Int
+playerScore player (Game {..}) = sum $ concatMap (\m -> map (\n -> gameScoring M.! m M.! n) $ reachedOne m) $ S.toList gameMines
+  where reachedOne mine = mineReachable player gameBoard mine
 
-mineReachable :: Board -> Player -> Node -> [Node]
-mineReachable graph player start = xdfsWith marked (\(_, n, _, _) -> n) [start] graph
+mineReachable :: Player -> Board -> Node -> [Node]
+mineReachable player graph start = xdfsWith marked (\(_, n, _, _) -> n) [start] graph
   where marked (from, _, _, to) = map snd $ filterTaken from ++ filterTaken to
         filterTaken = filter ((== Just player) . taken . fst)

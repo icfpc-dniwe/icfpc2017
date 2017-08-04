@@ -152,8 +152,10 @@ instance ToJSON SetupResponse where
   toEncoding = genericToEncoding jsonOptions
 
 
-boardFromMap :: BoardMap -> Board
-boardFromMap (BoardMap {..}) = mkGraph nodes edges
+boardFromMap :: BoardMap -> IndexedBoard
+boardFromMap (BoardMap {..}) = IndexedBoard { ibBoard = mkGraph nodes edges
+                                            , ibMines = mapMines
+                                            }
   where nodes = map (\(Site {..}) -> (siteId, NodeContext { isMine = siteId `S.member` mapMines })) mapSites
         edges = concatMap (\(River {..}) -> [(riverSource, riverTarget, notTaken), (riverTarget, riverSource, notTaken)]) mapRivers
         notTaken = EdgeContext { taken = Nothing }

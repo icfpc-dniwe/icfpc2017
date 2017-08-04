@@ -22,8 +22,13 @@ type NodeScores = Map Node Int
 type MineScores = Map Node NodeScores
 type Mines = Set Node
 
+data IndexedBoard = IndexedBoard { ibBoard :: Board
+                                 , ibMines :: Mines
+                                 }
+                  deriving (Show)
+
 data Game = Game { gameBoard :: Board
-                 , gameScoring :: MineScores
                  , gameMines :: Mines
+                 , gameScoring :: MineScores
                  }
           deriving (Show)

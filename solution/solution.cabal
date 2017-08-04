@@ -21,6 +21,7 @@ library
                    , DNIWE.Punt.Interface.Protocol
                    , DNIWE.Punt.Solver.Types
                    , DNIWE.Punt.Solver.Score
+                   , DNIWE.Punt.Solver.Stupid
   build-depends:     base >=4.9 && <4.10
                    , aeson
                    , attoparsec
