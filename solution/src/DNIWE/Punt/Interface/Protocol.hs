@@ -16,10 +16,12 @@ import Data.Aeson.Types (typeMismatch, Parser, Options(..), defaultOptions)
 import Data.Char (isUpper, toLower)
 
 import Data.Set (Set)
+import qualified Data.Set as S
 import Data.Text (Text)
+import qualified Data.Text as T
 import GHC.Generics (Generic)
 
-import qualified Data.Text as T
+import Data.Graph.Inductive.Graph (mkGraph)
 
 import DNIWE.Punt.Solver.Types
 
@@ -92,19 +94,19 @@ instance FromJSON River where
 
 newtype GameBoard = GameBoard { getBoard :: Board }
 
-data Map = Map {
+data BoardMap = BoardMap {
     mapSites  :: [Site]
   , mapRivers :: [River]
   , mapMines :: Set SiteId
   } deriving (Show, Eq, Generic)
   
-instance FromJSON Map where
+instance FromJSON BoardMap where
   parseJSON = genericParseJSON dropPrefixOptions
 
 
 -- S -> P: {"punter" : p, "punters" : n, "map" : map}
 -- P -> S: {"ready" : p}
-data SetupRequest = SetupRequest { srPunter :: PunterId, srPunters :: Int, srMap :: Map }
+data SetupRequest = SetupRequest { srPunter :: PunterId, srPunters :: Int, srMap :: BoardMap }
     deriving (Show, Eq, Generic)
 data SetupResponse = SetupResponse { srReady :: PunterId }
     deriving (Show, Eq, Generic)
@@ -114,3 +116,10 @@ instance FromJSON SetupRequest where
 
 instance ToJSON SetupResponse where
   toEncoding = genericToEncoding dropPrefixOptions
+
+
+boardFromMap :: BoardMap -> Board
+boardFromMap (BoardMap {..}) = mkGraph nodes edges
+  where nodes = map (\(Site {..}) -> (siteId, NodeContext { isMine = siteId `S.member` mapMines })) mapSites
+        edges = concatMap (\(River {..}) -> [(riverSource, riverTarget, notTaken), (riverTarget, riverSource, notTaken)]) mapRivers
+        notTaken = EdgeContext { taken = Nothing }
