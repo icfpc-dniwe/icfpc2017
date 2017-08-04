@@ -1,7 +1,9 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TupleSections #-}
 
+import Control.Monad (liftM2)
 import Data.ByteString.Lazy (ByteString)
 import Data.Char (chr)
 import Data.Text (Text)
@@ -10,7 +12,7 @@ import Data.Maybe (isJust)
 import Data.Aeson (FromJSON, Value, encode, decode, object, (.=))
 import qualified Data.Text as T
 
-import DNIWE.Punt.Interface.Protocol (HandshakeRequest, HandshakeResponse)
+import DNIWE.Punt.Interface.Protocol (HandshakeRequest, HandshakeResponse, SetupRequest, SetupResponse)
 
 import Test.Hspec (Expectation, Spec, hspec, describe, it, pending, shouldSatisfy, shouldBe)
 import Test.Hspec.QuickCheck (prop)
@@ -33,6 +35,12 @@ arbitraryString c = sized $ \n -> sequence . replicate n $ c
 class (Show a) => Unwrap a where
   unwrap :: a -> Value
 
+arbitraryPunterId :: Gen Int
+arbitraryPunterId = arbitrarySizedNatural 
+
+arbitrarySiteId :: Gen Int
+arbitrarySiteId = arbitrarySizedNatural 
+  
 
 newtype TestHandshakeRequest = TestHandshakeRequest Value deriving (Show)
 instance Unwrap TestHandshakeRequest where unwrap (TestHandshakeRequest v) = v
@@ -50,6 +58,35 @@ instance Arbitrary TestHandshakeResponse where
     return $ TestHandshakeResponse (object [ "you" .= name ])
 
 
+newtype TestSetupRequest = TestSetupRequest Value deriving (Show)
+instance Unwrap TestSetupRequest where unwrap (TestSetupRequest v) = v
+instance Arbitrary TestSetupRequest where
+  arbitrary = do
+    punter  <- arbitraryPunterId
+    punters <- arbitraryPunterId
+
+    sites  <- listOf1 arbitrarySiteId
+    rivers <- listOf1 (liftM2 (,) (elements sites) (elements sites))
+    mines  <- resize (length sites) $ listOf1 . elements $ sites
+
+    name <- arbitraryString charASCII
+    return $ TestSetupRequest (object [
+        "punter" .= punter
+      , "punters" .= punters
+      , "map" .= object [
+           "sites" .= map (\x -> object ["id" .= x]) sites
+         , "rivers" .= map (\(a, b) -> object ["source" .= a, "target" .= b]) rivers
+         , "mines" .= mines]])
+
+
+newtype TestSetupResponse = TestSetupResponse Value deriving (Show)
+instance Unwrap TestSetupResponse where unwrap (TestSetupResponse v) = v
+instance Arbitrary TestSetupResponse where
+  arbitrary = do
+    punterId <- arbitraryPunterId
+    return $ TestSetupResponse (object [ "ready" .= punterId ])
+
+  
 propParsing
   :: forall dataFrom dataTo. (Arbitrary dataFrom, Unwrap dataFrom, FromJSON dataTo, Show dataTo)
   => Proxy dataFrom
@@ -74,13 +111,13 @@ spec = do
   describe "HandshakeResponse" $ do
     propParsing (Proxy :: Proxy TestHandshakeResponse) (Proxy :: Proxy HandshakeResponse)
 
-  describe "Setup" $ do
-    prop "request parsing works" $ do
-      pending
+  describe "SetupRequest" $ do
+    propParsing (Proxy :: Proxy TestSetupRequest) (Proxy :: Proxy SetupRequest)
 
-    prop "response parsing works" $ do
-      pending
+  describe "SetupResponse" $ do
+    propParsing (Proxy :: Proxy TestSetupResponse) (Proxy :: Proxy SetupResponse)
 
+  
   describe "Gameplay" $ do
     prop "request parsing works" $ do
       pending
