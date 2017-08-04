@@ -39,7 +39,7 @@ await' _ = await >>= \case
 getMap :: MVar Board -> Conduit JSON.Value IO JSON.Value
 getMap mvar = do
   lift . putStrLn $ "getMap started"
-  yield . toJSON $ HandshakeRequest { hrMe = "DNIWE" }
+  yield . toJSON $ HandshakeRequest { hrMe = "DNIWE :: a" }
   await' (Proxy :: Proxy HandshakeResponse) >>= lift . putStrLn . show
   await' (Proxy :: Proxy SetupRequest) >>= lift . putMVar mvar . boardFromMap . srMap
   lift . putStrLn $ "getMap finished"

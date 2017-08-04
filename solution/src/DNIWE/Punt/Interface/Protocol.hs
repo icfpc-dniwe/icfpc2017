@@ -8,17 +8,14 @@
 module DNIWE.Punt.Interface.Protocol where
  -- export all
 
-import Control.Arrow ((&&&))
-import Control.Monad (liftM2)
-
-import Data.Aeson (ToJSON(..), FromJSON(..), genericParseJSON, genericToEncoding)
-import Data.Aeson.Types (typeMismatch, Parser, Options(..), defaultOptions)
 import Data.Char (isUpper, toLower)
+
+import Data.Aeson (ToJSON(..), FromJSON(..), genericParseJSON, genericToJSON, genericToEncoding)
+import Data.Aeson.Types (Options(..), SumEncoding(..), defaultOptions)
 
 import Data.Set (Set)
 import qualified Data.Set as S
 import Data.Text (Text)
-import qualified Data.Text as T
 import GHC.Generics (Generic)
 
 import Data.Graph.Inductive.Graph (mkGraph)
@@ -27,7 +24,6 @@ import DNIWE.Punt.Solver.Types
 
 
 {- TODO
-
   * issues
 
   * roadmap
@@ -35,20 +31,12 @@ import DNIWE.Punt.Solver.Types
 
     - [ ] online mode
       - [X] handshake
-      - [ ] setup
-      - [ ] gameplay
+      - [X] setup
+      - [x] gameplay
       - [ ] scoring
 
     - [ ] offline mode
-
-
 -}
-
-
-data Message = Message {
-    msgNum  :: Int
-  , msgData :: Text -- TODO parse?
-  } deriving (Show, Eq, Generic)
 
 
 dropPrefix :: String -> String
@@ -57,9 +45,22 @@ dropPrefix (c:t)
   | isUpper c = toLower c : t
   | otherwise = dropPrefix t
 
-dropPrefixOptions :: Options
-dropPrefixOptions = defaultOptions { fieldLabelModifier = dropPrefix }
+jsonOptions :: Options
+jsonOptions = defaultOptions {
+    fieldLabelModifier     = dropPrefix
+  , sumEncoding            = ObjectWithSingleField
+  , constructorTagModifier = map toLower}
 
+
+data Message = Message {
+    msgNum  :: Int
+  , msgData :: Text -- TODO parse?
+  } deriving (Show, Eq, Generic)
+
+
+
+
+-- Handshake
 
 -- - P -> S: {"me" : name}
 -- - S -> P: {"you" : name}
@@ -70,27 +71,30 @@ data HandshakeResponse = HandshakeResponse { hrYou :: Text }
 
 
 instance ToJSON HandshakeRequest where
-  toEncoding = genericToEncoding dropPrefixOptions
+  toJSON = genericToJSON jsonOptions
+  toEncoding = genericToEncoding jsonOptions
 
 instance FromJSON HandshakeResponse where
-  parseJSON = genericParseJSON dropPrefixOptions
+  parseJSON = genericParseJSON jsonOptions
 
+
+-- Setup
 
 data Site = Site {
     siteId :: SiteId
   } deriving (Show, Eq, Generic)
 
 instance FromJSON Site where
-  parseJSON = genericParseJSON dropPrefixOptions
+  parseJSON = genericParseJSON jsonOptions
 
-  
+
 data River = River {
     riverSource :: SiteId
   , riverTarget :: SiteId
   } deriving (Show, Eq, Generic)
 
 instance FromJSON River where
-  parseJSON = genericParseJSON dropPrefixOptions
+  parseJSON = genericParseJSON jsonOptions
 
 newtype GameBoard = GameBoard { getBoard :: Board }
 
@@ -99,9 +103,9 @@ data BoardMap = BoardMap {
   , mapRivers :: [River]
   , mapMines :: Set SiteId
   } deriving (Show, Eq, Generic)
-  
+
 instance FromJSON BoardMap where
-  parseJSON = genericParseJSON dropPrefixOptions
+  parseJSON = genericParseJSON jsonOptions
 
 
 -- S -> P: {"punter" : p, "punters" : n, "map" : map}
@@ -112,14 +116,55 @@ data SetupResponse = SetupResponse { srReady :: PunterId }
     deriving (Show, Eq, Generic)
 
 instance FromJSON SetupRequest where
-  parseJSON = genericParseJSON dropPrefixOptions
+  parseJSON = genericParseJSON jsonOptions
 
 instance ToJSON SetupResponse where
-  toEncoding = genericToEncoding dropPrefixOptions
+  toJSON = genericToJSON jsonOptions
+  toEncoding = genericToEncoding jsonOptions
 
 
 boardFromMap :: BoardMap -> Board
 boardFromMap (BoardMap {..}) = mkGraph nodes edges
   where nodes = map (\(Site {..}) -> (siteId, NodeContext { isMine = siteId `S.member` mapMines })) mapSites
-        edges = map (\(River {..}) -> (riverSource, riverTarget, notTaken)) mapRivers
+        edges = concatMap (\(River {..}) -> [(riverSource, riverTarget, notTaken), (riverTarget, riverSource, notTaken)]) mapRivers
         notTaken = EdgeContext { taken = Nothing }
+
+
+-- Gameplay
+
+-- {"claim" : {"punter" : PunterId, "source" : SiteId, "target" : SiteId}}
+-- {"pass" : {"punter" : PunterId}}
+data Move
+  = Claim {claimPunter :: PunterId, claimSource :: SiteId, claimTarget :: SiteId}
+  | Pass  {passPunter :: PunterId}
+  deriving (Show, Eq, Generic)
+
+instance FromJSON Move where
+  parseJSON = genericParseJSON jsonOptions
+
+instance ToJSON Move where
+  toEncoding = genericToEncoding jsonOptions
+
+
+newtype Moves = Moves { movesMoves :: [Move] }
+    deriving (Show, Eq, Generic)
+
+instance FromJSON Moves where
+  parseJSON = genericParseJSON jsonOptions
+
+instance ToJSON Moves where
+  toEncoding = genericToEncoding jsonOptions
+
+
+-- S -> P: {"move" : {"moves" : moves}}
+-- P -> S: move
+data GameplayRequest = GameplayRequest { grMove :: Moves }
+    deriving (Show, Eq, Generic)
+
+instance FromJSON GameplayRequest where
+  parseJSON = genericParseJSON jsonOptions
+
+instance ToJSON GameplayRequest where
+  toEncoding = genericToEncoding jsonOptions
+
+type GameplayResponse = Move
