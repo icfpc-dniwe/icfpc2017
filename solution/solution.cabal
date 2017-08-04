@@ -56,6 +56,8 @@ test-suite protocol
                    , solution
                    , hspec
                    , text
+                   , bytestring
+                   , aeson
                    , QuickCheck
   default-language:    Haskell2010
   ghc-options: -Wall

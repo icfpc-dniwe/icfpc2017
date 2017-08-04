@@ -66,11 +66,19 @@ data Message = Message {
 -- - S -> P: {"you" : name}
 data HandshakeRequest = HandshakeRequest { hrMe :: Text }
   deriving (Show, Eq, Generic)
+
+instance ToJSON HandshakeRequest where
+  toJSON = genericToJSON jsonOptions
+  toEncoding = genericToEncoding jsonOptions
+
+instance FromJSON HandshakeRequest where
+  parseJSON = genericParseJSON jsonOptions
+
+
 data HandshakeResponse = HandshakeResponse { hrYou :: Text }
   deriving (Show, Eq, Generic)
 
-
-instance ToJSON HandshakeRequest where
+instance ToJSON HandshakeResponse where
   toJSON = genericToJSON jsonOptions
   toEncoding = genericToEncoding jsonOptions
 
@@ -87,6 +95,10 @@ data Site = Site {
 instance FromJSON Site where
   parseJSON = genericParseJSON jsonOptions
 
+instance ToJSON Site where
+  toJSON = genericToJSON jsonOptions
+  toEncoding = genericToEncoding jsonOptions
+
 
 data River = River {
     riverSource :: SiteId
@@ -95,6 +107,11 @@ data River = River {
 
 instance FromJSON River where
   parseJSON = genericParseJSON jsonOptions
+
+instance ToJSON River where
+  toJSON = genericToJSON jsonOptions
+  toEncoding = genericToEncoding jsonOptions
+
 
 newtype GameBoard = GameBoard { getBoard :: Board }
 
@@ -107,15 +124,27 @@ data BoardMap = BoardMap {
 instance FromJSON BoardMap where
   parseJSON = genericParseJSON jsonOptions
 
+instance ToJSON BoardMap where
+  toJSON = genericToJSON jsonOptions
+  toEncoding = genericToEncoding jsonOptions
 
 -- S -> P: {"punter" : p, "punters" : n, "map" : map}
 -- P -> S: {"ready" : p}
 data SetupRequest = SetupRequest { srPunter :: PunterId, srPunters :: Int, srMap :: BoardMap }
     deriving (Show, Eq, Generic)
+
+instance FromJSON SetupRequest where
+  parseJSON = genericParseJSON jsonOptions
+
+instance ToJSON SetupRequest where
+  toJSON = genericToJSON jsonOptions
+  toEncoding = genericToEncoding jsonOptions
+
+
 data SetupResponse = SetupResponse { srReady :: PunterId }
     deriving (Show, Eq, Generic)
 
-instance FromJSON SetupRequest where
+instance FromJSON SetupResponse where
   parseJSON = genericParseJSON jsonOptions
 
 instance ToJSON SetupResponse where
@@ -143,6 +172,7 @@ instance FromJSON Move where
   parseJSON = genericParseJSON jsonOptions
 
 instance ToJSON Move where
+  toJSON = genericToJSON jsonOptions
   toEncoding = genericToEncoding jsonOptions
 
 
@@ -153,6 +183,7 @@ instance FromJSON Moves where
   parseJSON = genericParseJSON jsonOptions
 
 instance ToJSON Moves where
+  toJSON = genericToJSON jsonOptions
   toEncoding = genericToEncoding jsonOptions
 
 
@@ -165,6 +196,42 @@ instance FromJSON GameplayRequest where
   parseJSON = genericParseJSON jsonOptions
 
 instance ToJSON GameplayRequest where
+  toJSON = genericToJSON jsonOptions
   toEncoding = genericToEncoding jsonOptions
 
 type GameplayResponse = Move
+
+
+-- Scoring
+
+data Score = Score { scorePunterId :: PunterId, scoreScore :: Int }
+    deriving (Show, Eq, Generic)
+
+instance FromJSON Score where
+  parseJSON = genericParseJSON jsonOptions
+
+instance ToJSON Score where
+  toJSON = genericToJSON jsonOptions
+  toEncoding = genericToEncoding jsonOptions
+
+
+newtype ScoringResponse = ScoringResponse { srStop :: Stop }
+    deriving (Show, Eq, Generic)
+
+instance FromJSON ScoringResponse where
+  parseJSON = genericParseJSON jsonOptions
+
+instance ToJSON ScoringResponse where
+  toJSON = genericToJSON jsonOptions
+  toEncoding = genericToEncoding jsonOptions
+
+
+data Stop = Stop { stopMoves :: [Move], stopScores :: [Score] }
+    deriving (Show, Eq, Generic)
+
+instance FromJSON Stop where
+  parseJSON = genericParseJSON jsonOptions
+
+instance ToJSON Stop where
+  toJSON = genericToJSON jsonOptions
+  toEncoding = genericToEncoding jsonOptions
