@@ -11,14 +11,18 @@ module DNIWE.Punt.Interface.Protocol where
 import Control.Arrow ((&&&))
 import Control.Monad (liftM2)
 
-import Data.Aeson (ToJSON(..), FromJSON(..), Value(..), genericParseJSON, object, (.=), (.:), (.:?))
+import Data.Aeson (ToJSON(..), FromJSON(..), genericParseJSON, genericToEncoding)
 import Data.Aeson.Types (typeMismatch, Parser, Options(..), defaultOptions)
-import Data.Char(isUpper, toLower)
+import Data.Char (isUpper, toLower)
 
+import Data.Set (Set)
 import Data.Text (Text)
 import GHC.Generics (Generic)
 
 import qualified Data.Text as T
+
+import DNIWE.Punt.Solver.Types
+
 
 {- TODO
 
@@ -45,28 +49,6 @@ data Message = Message {
   } deriving (Show, Eq, Generic)
 
 
--- - P -> S: {"me" : name}
--- - S -> P: {"you" : name}
-data Handshake
-  = HandshakeRequest  { hrName :: Text }
-  | HandshakeResponse { hrName :: Text }
-  deriving (Show, Eq)
-
-
-instance ToJSON Handshake where
-  toJSON (HandshakeRequest {..})  = object ["me" .= hrName]
-  toJSON (HandshakeResponse {..}) = object ["you" .= hrName]
-
-instance FromJSON Handshake where
-  parseJSON (Object v) = liftM2 (,) (v .:? "me") (v .:? "you") >>= \case
-    (Just name, Nothing) -> return $ HandshakeRequest name
-    (Nothing, Just name) -> return $ HandshakeResponse name
-    _                    -> fail "Handshake :: unexpected structure"
-
-  parseJSON invalid = typeMismatch "Handshake" invalid
-
-
-
 dropPrefix :: String -> String
 dropPrefix "" = ""
 dropPrefix (c:t)
@@ -77,7 +59,20 @@ dropPrefixOptions :: Options
 dropPrefixOptions = defaultOptions { fieldLabelModifier = dropPrefix }
 
 
-type SiteId = Int
+-- - P -> S: {"me" : name}
+-- - S -> P: {"you" : name}
+data HandshakeRequest = HandshakeRequest { hrMe :: Text }
+  deriving (Show, Eq, Generic)
+data HandshakeResponse = HandshakeResponse { hrYou :: Text }
+  deriving (Show, Eq, Generic)
+
+
+instance ToJSON HandshakeRequest where
+  toEncoding = genericToEncoding dropPrefixOptions
+
+instance FromJSON HandshakeResponse where
+  parseJSON = genericParseJSON dropPrefixOptions
+
 
 data Site = Site {
     siteId :: SiteId
@@ -95,38 +90,27 @@ data River = River {
 instance FromJSON River where
   parseJSON = genericParseJSON dropPrefixOptions
 
+newtype GameBoard = GameBoard { getBoard :: Board }
 
 data Map = Map {
-    mapSites  :: [(Int, Bool)] -- TODO: replace with custom types
-  , mapRivers :: [(Int, Int)]  -- TODO: replace with custom types
-  } deriving (Show, Eq)
+    mapSites  :: [Site]
+  , mapRivers :: [River]
+  , mapMines :: Set SiteId
+  } deriving (Show, Eq, Generic)
   
 instance FromJSON Map where
-  parseJSON (Object v) = do
-    sites  <- (v .: "sites")  :: (Parser [Site])
-    rivers <- (v .: "rivers") :: (Parser [River])
-    mines  <- (v .: "mines")  :: (Parser [SiteId])
-
-    let mapSites = map ((id &&& (`elem` mines)) .  siteId) sites
-    let mapRivers = map (riverSource &&& riverTarget) rivers
-    return Map {..}
+  parseJSON = genericParseJSON dropPrefixOptions
 
 
 -- S -> P: {"punter" : p, "punters" : n, "map" : map}
 -- P -> S: {"ready" : p}
-data Setup
-  = SetupRequest  { srPunter :: Int, srPunters :: Int, srMap :: Map }
-  | SetupResponse { srPunter :: Int }
+data SetupRequest = SetupRequest { srPunter :: PunterId, srPunters :: Int, srMap :: Map }
+    deriving (Show, Eq, Generic)
+data SetupResponse = SetupResponse { srReady :: PunterId }
     deriving (Show, Eq, Generic)
 
-instance ToJSON Setup where
-  toJSON (SetupResponse {..}) = object ["ready" .= srPunter ]
+instance FromJSON SetupRequest where
+  parseJSON = genericParseJSON dropPrefixOptions
 
-instance FromJSON Setup where
-  parseJSON (Object v) = do
-    srPunter  <- v .: "punter"
-    srPunters <- v .: "punters"
-    srMap     <- v .: "map"
-    return SetupRequest {..}
-
-  parseJSON invalid = typeMismatch "Setup" invalid
+instance ToJSON SetupResponse where
+  toEncoding = genericToEncoding dropPrefixOptions

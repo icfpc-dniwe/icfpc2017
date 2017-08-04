@@ -21,6 +21,7 @@ library
                    , DNIWE.Punt.Interface.Protocol
   build-depends:     base >=4.9 && <4.10
                    , aeson
+                   , containers
                    , bytestring
                    , text
                    , fgl
