@@ -7,9 +7,7 @@ import Data.Graph.Inductive.Graph
 
 import DNIWE.Punt.Solver.Types
 import DNIWE.Punt.Solver.Score
-
-relabelEdge :: DynGraph gr => LEdge b -> gr a b -> gr a b
-relabelEdge e@(a, b, _) = insEdge e . delEdge (a, b)
+import DNIWE.Punt.Solver.Game
 
 stupidSolver :: Game -> Maybe (Node, Node)
 stupidSolver g@(Game {..}) = fmap fst $ listToMaybe $ sortBy (comparing snd) $ map (\(a, b, _) -> ((a, b), predictScore (a, b))) $ filter (\(_, _, ctx) -> isNothing $ taken ctx) $ labEdges gameBoard

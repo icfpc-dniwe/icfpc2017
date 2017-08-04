@@ -22,6 +22,7 @@ library
                    , DNIWE.Punt.Solver.Types
                    , DNIWE.Punt.Solver.Score
                    , DNIWE.Punt.Solver.Stupid
+                   , DNIWE.Punt.Solver.Game
   build-depends:     base >=4.9 && <4.10
                    , aeson
                    , attoparsec
@@ -37,8 +38,8 @@ library
   default-language:  Haskell2010
   ghc-options:       -Wall
 
-executable map-downloader
-  hs-source-dirs:    exe/map-downloader
+executable stupid-solver
+  hs-source-dirs:    exe/stupid-solver
   main-is:           Main.hs
   build-depends:     base >= 4.7 && < 5.0
                    , solution
@@ -47,6 +48,10 @@ executable map-downloader
                    , transformers
                    , bytestring
   default-extensions: OverloadedStrings
+                    , RecordWildCards
+                    , LambdaCase
+                    , ViewPatterns
+                    , ScopedTypeVariables
   default-language:  Haskell2010
   ghc-options:       -Wall
 
