@@ -43,28 +43,22 @@ data Message = Message {
   } deriving (Show, Eq, Generic)
 
 
-data Direction = FromServer | ToServer deriving (Show, Eq)
-
-
 -- - P -> S: {"me" : name}
 -- - S -> P: {"you" : name}
-data Handshake = Handshake {
-    handshakeDirection :: Direction
-  , handshakeName      :: Text
-  } deriving (Show, Eq)
+data Handshake
+  = HandshakeRequest  { hrName :: Text }
+  | HandshakeResponse { hrName :: Text }
+  deriving (Show, Eq)
 
 
 instance ToJSON Handshake where
-  toJSON Handshake {..} = object [fieldName .= handshakeName] where
-    fieldName = case handshakeDirection of
-      FromServer -> "you"
-      ToServer   -> "me"
+  toJSON (HandshakeRequest {..})  = object ["me".= hrName]
+  toJSON (HandshakeResponse {..}) = object ["you" .= hrName]
 
 instance FromJSON Handshake where
   parseJSON (Object v) = liftM2 (,) (v .:? "me") (v .:? "you") >>= \case
-    (Just name, Nothing) -> return $ Handshake { handshakeDirection = ToServer,   handshakeName = name }
-    (Nothing, Just name) -> return $ Handshake { handshakeDirection = FromServer, handshakeName = name }
+    (Just name, Nothing) -> return $ HandshakeRequest name
+    (Nothing, Just name) -> return $ HandshakeResponse name
     _                    -> fail "Handshake :: unexpected structure"
 
   parseJSON invalid    = typeMismatch "Handshake" invalid
-

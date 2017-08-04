@@ -4,9 +4,7 @@
 import Data.Text (Text)
 import qualified Data.Text as T
 
-import DNIWE.Punt.Interface.Protocol (
-    Direction(..)
-  , Handshake(..))
+import DNIWE.Punt.Interface.Protocol (Handshake(..))
 
 import Test.Hspec (Expectation, Spec, hspec, describe, it, shouldSatisfy, shouldBe)
 import Test.Hspec.QuickCheck (prop)
