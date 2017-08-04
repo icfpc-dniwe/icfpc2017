@@ -1,8 +1,7 @@
 {-# LANGUAGE DeriveGeneric #-}
 
 
-
-module DNIWE.Punt.Protocol where
+module DNIWE.Punt.Interface.Protocol where
  -- export all
 
 import Data.Aeson ()
