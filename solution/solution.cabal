@@ -32,6 +32,7 @@ library
                    , conduit-extra
   default-extensions: FlexibleContexts
                     , OverloadedStrings
+                    , RecordWildCards
   default-language:  Haskell2010
   ghc-options:       -Wall
 
