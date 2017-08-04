@@ -141,7 +141,7 @@ instance ToJSON Settings where
   toEncoding = genericToEncoding jsonOptions
 
 -- S -> P: {"punter" : p, "punters" : n, "map" : map, "settings" : settings}
-data SetupRequest = SetupRequest { srPunter :: PunterId, srPunters :: Int, srMap :: BoardMap, srSettings :: Settings }
+data SetupRequest = SetupRequest { srPunter :: PunterId, srPunters :: Int, srMap :: BoardMap, srSettings :: Maybe Settings }
     deriving (Show, Eq, Generic)
 
 instance FromJSON SetupRequest where
@@ -164,7 +164,7 @@ instance ToJSON Future where
   toEncoding = genericToEncoding jsonOptions
 
 -- P -> S: {"ready" : p, "futures" : futures}
-data SetupResponse = SetupResponse { srReady :: PunterId, srFutures :: [Future]}
+data SetupResponse = SetupResponse { srReady :: PunterId, srFutures :: [Future] }
     deriving (Show, Eq, Generic)
 
 instance FromJSON SetupResponse where

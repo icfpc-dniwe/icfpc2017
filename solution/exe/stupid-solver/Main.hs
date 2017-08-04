@@ -53,7 +53,7 @@ playGame = do
       applyMove' (Pass _) game = game
       applyMove' (Claim {..}) game = applyMove (playerFromId claimPunter) (claimSource, claimTarget) game
 
-  yield . toJSON $ SetupResponse { srReady = myId }
+  yield . toJSON $ SetupResponse { srReady = myId, srFutures = [] }
 
   let loop game = awaitJSON >>= \case
         GameReq greq@(GameplayRequest {..}) -> do
