@@ -10,7 +10,7 @@ fi
 INPUT=$1
 echo "input: $INPUT"
 
-PUNTVIS="bin/puntvis.exe"
+PUNTVIS="mono bin/puntvis.exe"
 IMAGES_DIR="$INPUT-images"
 GRAPHVIZ_DIR="$INPUT-graphviz"
 DOT="dot"
