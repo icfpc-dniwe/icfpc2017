@@ -8,14 +8,14 @@
 module DNIWE.Punt.Interface.Protocol where
  -- export all
 
-import Data.Aeson (ToJSON(..), FromJSON(..), genericParseJSON, genericToEncoding)
-import Data.Aeson.Types (Options(..), defaultOptions, SumEncoding(..))
 import Data.Char (isUpper, toLower)
+
+import Data.Aeson (ToJSON(..), FromJSON(..), genericParseJSON, genericToJSON, genericToEncoding)
+import Data.Aeson.Types (Options(..), SumEncoding(..), defaultOptions)
 
 import Data.Set (Set)
 import qualified Data.Set as S
 import Data.Text (Text)
-import qualified Data.Text as T
 import GHC.Generics (Generic)
 
 import Data.Graph.Inductive.Graph (mkGraph)
@@ -71,6 +71,7 @@ data HandshakeResponse = HandshakeResponse { hrYou :: Text }
 
 
 instance ToJSON HandshakeRequest where
+  toJSON = genericToJSON jsonOptions
   toEncoding = genericToEncoding jsonOptions
 
 instance FromJSON HandshakeResponse where
@@ -118,6 +119,7 @@ instance FromJSON SetupRequest where
   parseJSON = genericParseJSON jsonOptions
 
 instance ToJSON SetupResponse where
+  toJSON = genericToJSON jsonOptions
   toEncoding = genericToEncoding jsonOptions
 
 
