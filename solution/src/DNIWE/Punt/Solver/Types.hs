@@ -32,3 +32,17 @@ data Game = Game { gameBoard :: Board
                  , gameScoring :: MineScores
                  }
           deriving (Show)
+
+data Action = Action { estimatedScore :: Double
+                     , features :: [Double]
+                     }
+            deriving (Show)
+
+data GameState = GameState { stupid :: Double
+                           }
+               deriving (Show)
+
+data GameTree = GameTree { gameState :: GameState
+                         , actions :: [(Action, GameTree)]
+                         }
+              deriving (Show)
