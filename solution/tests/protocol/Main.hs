@@ -10,7 +10,7 @@ import Data.Maybe (isJust)
 import Data.Aeson (FromJSON, Value, encode, decode, object, (.=))
 import qualified Data.Text as T
 
-import DNIWE.Punt.Interface.Protocol (HandshakeRequest)
+import DNIWE.Punt.Interface.Protocol (HandshakeRequest, HandshakeResponse)
 
 import Test.Hspec (Expectation, Spec, hspec, describe, it, pending, shouldSatisfy, shouldBe)
 import Test.Hspec.QuickCheck (prop)
@@ -33,12 +33,21 @@ arbitraryString c = sized $ \n -> sequence . replicate n $ c
 class (Show a) => Unwrap a where
   unwrap :: a -> Value
 
+
 newtype TestHandshakeRequest = TestHandshakeRequest Value deriving (Show)
 instance Unwrap TestHandshakeRequest where unwrap (TestHandshakeRequest v) = v
 instance Arbitrary TestHandshakeRequest where
   arbitrary = do
     name <- arbitraryString charASCII
     return $ TestHandshakeRequest (object [ "me" .= name ])
+
+
+newtype TestHandshakeResponse = TestHandshakeResponse Value deriving (Show)
+instance Unwrap TestHandshakeResponse where unwrap (TestHandshakeResponse v) = v
+instance Arbitrary TestHandshakeResponse where
+  arbitrary = do
+    name <- arbitraryString charASCII
+    return $ TestHandshakeResponse (object [ "you" .= name ])
 
 
 propParsing
@@ -61,6 +70,9 @@ spec :: Spec
 spec = do
   describe "HandshakeRequest" $ do
     propParsing (Proxy :: Proxy TestHandshakeRequest) (Proxy :: Proxy HandshakeRequest)
+
+  describe "HandshakeResponse" $ do
+    propParsing (Proxy :: Proxy TestHandshakeResponse) (Proxy :: Proxy HandshakeResponse)
 
   describe "Setup" $ do
     prop "request parsing works" $ do
