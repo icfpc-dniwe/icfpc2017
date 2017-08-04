@@ -20,6 +20,7 @@ library
   exposed-modules:   DNIWE.Punt.Interface.Online
                    , DNIWE.Punt.Interface.Protocol
                    , DNIWE.Punt.Solver.Types
+                   , DNIWE.Punt.Solver.Score
   build-depends:     base >=4.9 && <4.10
                    , aeson
                    , containers

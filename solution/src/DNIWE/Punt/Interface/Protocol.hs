@@ -121,5 +121,5 @@ instance ToJSON SetupResponse where
 boardFromMap :: BoardMap -> Board
 boardFromMap (BoardMap {..}) = mkGraph nodes edges
   where nodes = map (\(Site {..}) -> (siteId, NodeContext { isMine = siteId `S.member` mapMines })) mapSites
-        edges = concatMap (\(River {..}) -> [(riverSource, riverTarget, notTaken), (riverTarget, riverSource, notTaken)]) mapRivers
+        edges = map (\(River {..}) -> (riverSource, riverTarget, notTaken)) mapRivers
         notTaken = EdgeContext { taken = Nothing }
