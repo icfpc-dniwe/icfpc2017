@@ -39,6 +39,24 @@ class Parser:
 			return {}, ParseResult.NotJSON
 		return d, ParseResult.OK
 
+	## GENERAL ##
+	@staticmethod
+	def ParseRawMove(rawMove):
+		if 'claim' in rawMove:
+			if 'source' not in rawMove or 'target' not in rawMove:
+				return {}, ParseResult.DataError
+			return {rawMove['punter']: {rawMove['source']: rawMove['target']}}, ParseResult.OK
+		elif 'pass' in rawMove:
+			return {rawMove['punter']: {}}, ParseResult.OK
+		else:
+			return {}, ParseResult.DataError
+
+	@staticmethod
+	def ParseRawFutures(rawFutures):
+		if not all(lambda ftr: 'source' in ftr and 'target' in ftr):
+			return {}, ParseResult.DataError
+		return zip(map(lambda ftr: (ftr['source'], ftr['target']), rawFutures.items())), ParseResult.OK
+
 	## HANDSHAKE ##
 
 	@staticmethod
@@ -56,16 +74,16 @@ class Parser:
 	## SETUP ##
 
 	@staticmethod
-	def PutSetupPuntersMap(punterId, puntersCount, theMap):
-		j, _ = ToJSON({'punter': punterId, 'punters': puntersCount, 'map': theMap})
+	def PutSetupPuntersMapSettings(punterId, puntersCount, settings, theMap):
+		j, _ = ToJSON({'punter': punterId, 'punters': puntersCount, 'map': theMap, 'settings': settings})
 		return j, ParseResult.OK
 
 	@staticmethod
 	def GetSetupReadinessState(jsonInput):
 		valid, data = IsJSON(jsonInput)
 		if not valid:
-			return "", ParseResult.NotJSON
-		return data['ready'], data['state'], ParseResult.OK
+			return -1, "", {}, ParseResult.NotJSON
+		return data['ready'], data['state'], data['futures'], ParseResult.OK
 
 	## GAMEPLAY ##
 
@@ -75,11 +93,15 @@ class Parser:
 		return j, ParseResult.OK
 
 	@staticmethod
-	def GetGameplayState(jsonInput):
+	def GetGameplayMoveState(jsonInput):
 		valid, data = IsJSON(jsonInput)
 		if not valid:
-			return "", ParseResult.NotJSON
-		return data['state'], ParseResult.OK
+			return {}, "", ParseResult.NotJSON
+
+		parsedMove, res = ParseRawMove(data['move'])
+		if not ParseResult.IsValid(res):
+			return {}, "", res
+		return parsedMove, data['state'], ParseResult.OK
 
 	## SCORING ##
 
@@ -139,11 +161,20 @@ class Protocol:
 		return j
 
 class Game:
-	nSites = 0
-	nPunters = 0
 	mines = []
 	rivers = {}
+	futures = {}
+
+	moves = {}
 	sitesClaim = {}
+	
+	nSites = 0
+	nPunters = 0
+	_iPunter = 0
+
+	class MoveKind(Enum):
+		Pass = 0
+		Claim = 1
 
 	@staticmethod
 	def SiteToString(siteId):
@@ -175,4 +206,16 @@ class Game:
 		self.mines = mines
 		self.rivers = rivers
 
-	def 
+	def CreatePunter(self):
+		self._iPunter += 1
+		return self._iPunter
+
+	def RegisterMove(self, move):
+		pnt, clm = move.items()[0]
+		
+		# punter passed
+		if len(clm) == 0:
+			return
+
+		src, dst = clm.items()[0]
+		
