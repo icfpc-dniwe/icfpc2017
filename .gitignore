@@ -15,6 +15,9 @@ cabal.sandbox.config
 *.hp
 .stack-work/
 
+# Emacs autosave
+\#*#
+
 # User-specific files
 *.suo
 *.user
