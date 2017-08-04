@@ -20,7 +20,13 @@ type Board = Gr NodeContext EdgeContext
 
 type NodeScores = Map Node Int
 type MineScores = Map Node NodeScores
+
+type Mine = Node
 type Mines = Set Node
+
+data Future = Mine Node
+            deriving (Show, Eq)
+type Futures = Map Player Future
 
 data IndexedBoard = IndexedBoard { ibBoard :: Board
                                  , ibMines :: Mines
@@ -29,6 +35,7 @@ data IndexedBoard = IndexedBoard { ibBoard :: Board
 
 data Game = Game { gameBoard :: Board
                  , gameMines :: Mines
+                 , gameFutures :: Futures
                  , gameScoring :: MineScores
                  }
           deriving (Show)
