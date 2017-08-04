@@ -66,11 +66,19 @@ data Message = Message {
 -- - S -> P: {"you" : name}
 data HandshakeRequest = HandshakeRequest { hrMe :: Text }
   deriving (Show, Eq, Generic)
+
+instance ToJSON HandshakeRequest where
+  toJSON = genericToJSON jsonOptions
+  toEncoding = genericToEncoding jsonOptions
+
+instance FromJSON HandshakeRequest where
+  parseJSON = genericParseJSON jsonOptions
+
+
 data HandshakeResponse = HandshakeResponse { hrYou :: Text }
   deriving (Show, Eq, Generic)
 
-
-instance ToJSON HandshakeRequest where
+instance ToJSON HandshakeResponse where
   toJSON = genericToJSON jsonOptions
   toEncoding = genericToEncoding jsonOptions
 
