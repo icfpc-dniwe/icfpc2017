@@ -2,7 +2,6 @@ module DNIWE.Punt.Interface.Online where
 
 import Data.ByteString (ByteString)
 import qualified Data.ByteString.Lazy as BL
-import Control.Monad.Trans.Control
 import qualified Data.Aeson as JSON
 import qualified Data.Aeson.Parser as JSONP
 import Data.Conduit

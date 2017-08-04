@@ -16,34 +16,38 @@ extra-source-files:  ChangeLog.md
 cabal-version:       >=1.10
 
 library
-  exposed-modules: DNIWE.Punt.Interface.Online
-                 , DNIWE.Punt.Interface.Protocol
-  -- other-modules:       
+  hs-source-dirs:    src
+  exposed-modules:   DNIWE.Punt.Interface.Online
+                   , DNIWE.Punt.Interface.Protocol
+  build-depends:     base >=4.9 && <4.10
+                   , aeson
+                   , bytestring
+                   , text
+                   , fgl
+                   , conduit
+                   , conduit-extra
   default-extensions: FlexibleContexts
-  build-depends: base >=4.9 && <4.10
-               , aeson
-               , bytestring
-               , monad-control
-               , text
-               , fgl
-               , conduit
-               , conduit-extra
+  default-language:  Haskell2010
+  ghc-options:       -Wall
 
-  hs-source-dirs:      src
-  default-language:    Haskell2010
+executable map-downloader
+  hs-source-dirs:    exe/map-downloader
+  main-is:           Main.hs
+  build-depends:     base >= 4.7 && < 5.0
+                   , solution
+                   , bytestring
+  default-extensions: OverloadedStrings
+  default-language:  Haskell2010
+  ghc-options:       -Wall
 
 test-suite protocol
-  type:           exitcode-stdio-1.0
-
-  hs-source-dirs: tests/protocol
-  main-is:        Main.hs
-
-  ghc-options: -Wall
-
-  build-depends: base >= 4.7 && < 5.0
-               , solution
-               , hspec
-               , text
-               , QuickCheck
-
+  type:              exitcode-stdio-1.0
+  hs-source-dirs:    tests/protocol
+  main-is:           Main.hs
+  build-depends:     base >= 4.7 && < 5.0
+                   , solution
+                   , hspec
+                   , text
+                   , QuickCheck
   default-language:    Haskell2010
+  ghc-options: -Wall
