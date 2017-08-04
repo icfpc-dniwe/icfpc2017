@@ -14,7 +14,7 @@ import Data.Conduit.Attoparsec
 
 runJSONClient :: ByteString -> Int -> Conduit JSON.Value IO JSON.Value -> IO ()
 runJSONClient host port conduit = runTCPClient (clientSettings port host) $ \appData -> do
-  appSource appData $$ conduitParser (P.decimal >> P.char ':' >> JSONP.json) =$= CL.map snd =$= conduit =$= CL.map encodeValue =$= appSink appData
+  appSource appData $$ conduitParser ((P.decimal :: P.Parser Int) >> P.char ':' >> JSONP.json) =$= CL.map snd =$= conduit =$= CL.map encodeValue =$= appSink appData
 
 encodeValue :: JSON.Value -> ByteString
 encodeValue val = B.pack (show $ B.length encoded) <> ":" <> encoded
