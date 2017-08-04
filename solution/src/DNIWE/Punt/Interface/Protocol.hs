@@ -143,6 +143,7 @@ instance FromJSON Move where
   parseJSON = genericParseJSON jsonOptions
 
 instance ToJSON Move where
+  toJSON = genericToJSON jsonOptions
   toEncoding = genericToEncoding jsonOptions
 
 
@@ -153,6 +154,7 @@ instance FromJSON Moves where
   parseJSON = genericParseJSON jsonOptions
 
 instance ToJSON Moves where
+  toJSON = genericToJSON jsonOptions
   toEncoding = genericToEncoding jsonOptions
 
 
@@ -165,6 +167,42 @@ instance FromJSON GameplayRequest where
   parseJSON = genericParseJSON jsonOptions
 
 instance ToJSON GameplayRequest where
+  toJSON = genericToJSON jsonOptions
   toEncoding = genericToEncoding jsonOptions
 
 type GameplayResponse = Move
+
+
+-- Scoring
+
+data Score = Score { scorePunterId :: PunterId, scoreScore :: Int }
+    deriving (Show, Eq, Generic)
+
+instance FromJSON Score where
+  parseJSON = genericParseJSON jsonOptions
+
+instance ToJSON Score where
+  toJSON = genericToJSON jsonOptions
+  toEncoding = genericToEncoding jsonOptions
+
+
+newtype ScoringResponse = ScoringResponse { srStop :: Stop }
+    deriving (Show, Eq, Generic)
+
+instance FromJSON ScoringResponse where
+  parseJSON = genericParseJSON jsonOptions
+
+instance ToJSON ScoringResponse where
+  toJSON = genericToJSON jsonOptions
+  toEncoding = genericToEncoding jsonOptions
+
+
+data Stop = Stop { stopMoves :: [Move], stopScores :: [Score] }
+    deriving (Show, Eq, Generic)
+
+instance FromJSON Stop where
+  parseJSON = genericParseJSON jsonOptions
+
+instance ToJSON Stop where
+  toJSON = genericToJSON jsonOptions
+  toEncoding = genericToEncoding jsonOptions
