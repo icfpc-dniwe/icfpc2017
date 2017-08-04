@@ -1,9 +1,8 @@
 using System;
-using QuickGraph;
 
 namespace puntvis
 {
-	internal class River : IEdge<Site>
+	internal class River
 	{
 		public int? owner { get; private set; }
 		public Site Source { get; }

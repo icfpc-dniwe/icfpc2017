@@ -3,17 +3,16 @@ namespace puntvis
 	internal class Site
 	{
 		public readonly int Id;
+		public readonly double? x;
+		public readonly double? y;
+		public readonly bool isMine;
 
-		public Site(int id)
+		public Site(int id, double? x, double? y, bool isMine)
 		{
 			Id = id;
-		}
-	}
-
-	internal class Mine : Site
-	{
-		public Mine(int id) : base(id)
-		{
+			this.x = x;
+			this.y = y;
+			this.isMine = isMine;
 		}
 	}
 }

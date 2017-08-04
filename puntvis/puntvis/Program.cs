@@ -5,7 +5,6 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
-using QuickGraph.Algorithms.RandomWalks;
 
 namespace puntvis
 {
@@ -44,7 +43,7 @@ namespace puntvis
 				punters = 0,
 				map = new
 				{
-					sites = new[] {new {id = 0}},
+					sites = new[] {new {id = 0, x = 0.0 as double?, y = 0.0 as double?}},
 					rivers = new[] {new {source = 0, target = 0}},
 					mines = new[] {0}
 				}
@@ -54,7 +53,7 @@ namespace puntvis
 			var sites = rawGame.map.sites
 				.ToDictionary(
 					x => x.id,
-					x => mines.Contains(x.id) ? new Mine(x.id) : new Site(x.id));
+					x => new Site(x.id, x.x, x.y, isMine: mines.Contains(x.id)));
 			var game = new Game(
 				rawGame.punter,
 				rawGame.punters,

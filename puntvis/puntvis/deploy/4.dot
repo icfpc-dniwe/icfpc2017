@@ -1,0 +1,22 @@
+graph G {
+0 [fontcolor="#0000FFFF", label="0", pos="0,0!"];
+1 [fontcolor="#FF0000FF", label="1", pos="100,0!"];
+2 [fontcolor="#0000FFFF", label="2", pos="200,0!"];
+3 [fontcolor="#0000FFFF", label="3", pos="200,-100!"];
+4 [fontcolor="#0000FFFF", label="4", pos="200,-200!"];
+5 [fontcolor="#FF0000FF", label="5", pos="100,-200!"];
+6 [fontcolor="#0000FFFF", label="6", pos="0,-200!"];
+7 [fontcolor="#0000FFFF", label="7", pos="0,-100!"];
+0 -- 1 [ color="#FF0000FF", label="0", fontname="Courier New",  fontsize=12];
+0 -- 7 [ label="_", fontname="Courier New",  fontsize=12];
+1 -- 3 [ label="_", fontname="Courier New",  fontsize=12];
+1 -- 7 [ label="_", fontname="Courier New",  fontsize=12];
+1 -- 2 [ color="#00FF00FF", label="1", fontname="Courier New",  fontsize=12];
+2 -- 3 [ color="#FF0000FF", label="0", fontname="Courier New",  fontsize=12];
+3 -- 4 [ color="#00FF00FF", label="1", fontname="Courier New",  fontsize=12];
+3 -- 5 [ label="_", fontname="Courier New",  fontsize=12];
+4 -- 5 [ color="#FF0000FF", label="0", fontname="Courier New",  fontsize=12];
+5 -- 6 [ color="#00FF00FF", label="1", fontname="Courier New",  fontsize=12];
+5 -- 7 [ label="_", fontname="Courier New",  fontsize=12];
+6 -- 7 [ label="_", fontname="Courier New",  fontsize=12];
+}
