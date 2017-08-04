@@ -9,6 +9,7 @@ module DNIWE.Punt.Interface.Protocol where
  -- export all
 
 import Data.Char (isUpper, toLower)
+import Control.Applicative
 
 import Data.Aeson (ToJSON(..), FromJSON(..), genericParseJSON, genericToJSON, genericToEncoding)
 import Data.Aeson.Types (Options(..), SumEncoding(..), defaultOptions)
@@ -179,7 +180,7 @@ boardFromMap (BoardMap {..}) = IndexedBoard { ibBoard = mkGraph nodes edges
                                             , ibMines = mapMines
                                             }
   where nodes = map (\(Site {..}) -> (siteId, NodeContext { isMine = siteId `S.member` mapMines })) mapSites
-        edges = concatMap (\(River {..}) -> [(riverSource, riverTarget, notTaken), (riverTarget, riverSource, notTaken)]) mapRivers
+        edges = map (\(River {..}) -> (riverSource, riverTarget, notTaken)) mapRivers
         notTaken = EdgeContext { taken = Nothing }
 
 
@@ -188,8 +189,8 @@ boardFromMap (BoardMap {..}) = IndexedBoard { ibBoard = mkGraph nodes edges
 -- {"claim" : {"punter" : PunterId, "source" : SiteId, "target" : SiteId}}
 -- {"pass" : {"punter" : PunterId}}
 data Move
-  = Claim {claimPunter :: PunterId, claimSource :: SiteId, claimTarget :: SiteId}
-  | Pass  {passPunter :: PunterId}
+  = Claim { claimPunter :: PunterId, claimSource :: SiteId, claimTarget :: SiteId }
+  | Pass { passPunter :: PunterId }
   deriving (Show, Eq, Generic)
 
 instance FromJSON Move where
@@ -228,24 +229,13 @@ type GameplayResponse = Move
 
 -- Scoring
 
-data Score = Score { scorePunterId :: PunterId, scoreScore :: Int }
+data Score = Score { scorePunter :: PunterId, scoreScore :: Int }
     deriving (Show, Eq, Generic)
 
 instance FromJSON Score where
   parseJSON = genericParseJSON jsonOptions
 
 instance ToJSON Score where
-  toJSON = genericToJSON jsonOptions
-  toEncoding = genericToEncoding jsonOptions
-
-
-newtype ScoringResponse = ScoringResponse { srStop :: Stop }
-    deriving (Show, Eq, Generic)
-
-instance FromJSON ScoringResponse where
-  parseJSON = genericParseJSON jsonOptions
-
-instance ToJSON ScoringResponse where
   toJSON = genericToJSON jsonOptions
   toEncoding = genericToEncoding jsonOptions
 
@@ -259,3 +249,27 @@ instance FromJSON Stop where
 instance ToJSON Stop where
   toJSON = genericToJSON jsonOptions
   toEncoding = genericToEncoding jsonOptions
+
+newtype StopRequest = StopRequest { srStop :: Stop }
+    deriving (Show, Eq, Generic)
+
+instance FromJSON StopRequest where
+  parseJSON = genericParseJSON jsonOptions
+
+instance ToJSON StopRequest where
+  toJSON = genericToJSON jsonOptions
+  toEncoding = genericToEncoding jsonOptions
+
+
+-- Protocol
+
+data Request = StopReq StopRequest
+             | GameReq GameplayRequest
+             deriving (Show, Eq)
+
+instance FromJSON Request where
+  parseJSON p = (StopReq <$> parseJSON p) <|> (GameReq <$> parseJSON p)
+
+instance ToJSON Request where
+  toJSON (StopReq stop) = toJSON stop
+  toJSON (GameReq game) = toJSON game

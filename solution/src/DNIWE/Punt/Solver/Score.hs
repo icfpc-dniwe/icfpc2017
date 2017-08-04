@@ -3,14 +3,10 @@ module DNIWE.Punt.Solver.Score
   , playerScore
   ) where
 
-import Control.Arrow
-import Data.Maybe
-import Data.Set (Set)
 import qualified Data.Set as S
-import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as M
 import Data.Graph.Inductive.Graph
-import Data.Graph.Inductive.PatriciaTree
+import Data.Graph.Inductive.Basic
 import Data.Graph.Inductive.Query.DFS
 import Data.Graph.Inductive.Query.SP
 
@@ -19,7 +15,7 @@ import DNIWE.Punt.Solver.Types
 boardGame :: IndexedBoard -> MineScores
 boardGame (IndexedBoard {..}) = M.unionsWith M.union $ map scoreOne $ S.toList ibMines
   where scoreOne mine = M.singleton mine $ M.fromList $ map (\(LP ((dest, score):_)) -> (dest, score * score)) $ spTree mine weightedBoard
-        weightedBoard = emap (const 1) ibBoard
+        weightedBoard = undir $ emap (const 1) ibBoard
 
 playerScore :: Player -> Game -> Int
 playerScore player (Game {..}) = sum $ concatMap (\m -> map (\n -> gameScoring M.! m M.! n) $ reachedOne m) $ S.toList gameMines
