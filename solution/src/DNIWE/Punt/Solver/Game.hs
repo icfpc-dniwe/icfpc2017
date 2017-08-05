@@ -63,20 +63,15 @@ nextPlayer game (After n)
   | otherwise = After (n + 1)
 
 
-gameStateTree :: GameData -> GameState -> GameTree
+gameStateTree :: GameData -> GameState -> GameTree ()
 gameStateTree game@(GameData {..}) state =
   GameTree { treeState = state
            , treeActions = map nextAction $ freeEdges state
            }
-  where nextAction ledge = (estimateAction game state ledge, gameStateTree game newPlayerState)
+  where nextAction ledge = (action, gameStateTree game newPlayerState)
           where newState = applyMove (statePlayer state) edge state
                 newPlayerState = newState { statePlayer = nextPlayer game $ statePlayer state }
                 edge = toEdge ledge
-
-estimateAction :: GameData -> GameState -> LEdge EdgeContext -> Action
-estimateAction game state ledge =
-  Action { actionScore = playerScore game newState
-         , actionEdge = edge
-         }
-  where newState = applyMove (statePlayer state) edge state
-        edge = toEdge ledge
+                action = Action { actionEdge = edge
+                                , actionScore = ()
+                                }

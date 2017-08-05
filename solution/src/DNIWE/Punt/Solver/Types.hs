@@ -47,12 +47,12 @@ data GameState = GameState { stateBoard :: Board
                            }
                deriving (Show)
 
-data Action = Action { actionEdge :: Edge
-                     , actionScore :: Int
-                     }
-            deriving (Show)
-
-data GameTree = GameTree { treeState :: GameState
-                         , treeActions :: [(Action, GameTree)]
-                         }
+data Action a = Action { actionEdge :: Edge
+                       , actionScore :: a
+                       }
               deriving (Show)
+
+data GameTree a = GameTree { treeState :: GameState
+                           , treeActions :: [(Action a, GameTree a)]
+                           }
+                deriving (Show)

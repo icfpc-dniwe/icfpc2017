@@ -57,9 +57,11 @@ playGame = do
       applyMove' (Pass _) state = state
       applyMove' (Claim {..}) state = applyMove (playerFromId claimPunter) (claimSource, claimTarget) state
 
+      solver game state = stupidGameTree (3 * stPunters setup) game $ gameStateTree game state
+
   let preGame = gameData board [] myId (srPunters setup)
       futures
-        | settingsFutures = take 1 $ mapMaybe (maybeFuture preGame) $ stupidSolver' $ gameStateTree preGame (initialState preGame)
+        | settingsFutures = take 1 $ mapMaybe (maybeFuture preGame) $ stupidSolver' $ solver preGame (initialState game)
         | otherwise = []
       setupResp = SetupResponse { srReady = myId
                                 , srFutures = map (uncurry PFuture) futures
