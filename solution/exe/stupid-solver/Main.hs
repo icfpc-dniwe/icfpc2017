@@ -57,11 +57,11 @@ playGame = do
       applyMove' (Pass _) state = state
       applyMove' (Claim {..}) state = applyMove (playerFromId claimPunter) (claimSource, claimTarget) state
 
-      solver game state = stupidGameTree (3 * stPunters setup) game $ gameStateTree game state
+      solver game state = map (actionEdge . fst) $ treeActions $ snd $ stupidGameTree (3 * srPunters setup) game $ gameStateTree game state
 
   let preGame = gameData board [] myId (srPunters setup)
       futures
-        | settingsFutures = take 1 $ mapMaybe (maybeFuture preGame) $ stupidSolver' $ solver preGame (initialState game)
+        | settingsFutures = take 1 $ mapMaybe (maybeFuture preGame) $ solver preGame (initialState game)
         | otherwise = []
       setupResp = SetupResponse { srReady = myId
                                 , srFutures = map (uncurry PFuture) futures
@@ -77,9 +77,9 @@ playGame = do
           unless (prevMove `elem` movesMoves grMove) $ fail "My move was rejected"
 
           let newState = foldr applyMove' state (movesMoves grMove)
-              move = case stupidSolver $ gameStateTree game newState of
-                       Nothing -> Pass { passPunter = myId }
-                       Just (a, b) -> Claim { claimPunter = myId, claimSource = a, claimTarget = b }
+              move = case solver game newState of
+                       (a, b):_ -> Claim { claimPunter = myId, claimSource = a, claimTarget = b }
+                       [] -> Pass { passPunter = myId }
 
           lift . putStrLn $ "New game state: " ++ show newState
           lift . putStrLn $ ""
