@@ -11,13 +11,6 @@ type PunterId = Int
 data Player = Us | Other !PunterId
             deriving (Show, Eq, Ord)
 
-newtype NodeContext = NodeContext { isMine :: Bool }
-                    deriving (Show, Eq)
-newtype EdgeContext = EdgeContext { taken :: Maybe Player }
-                    deriving (Show, Eq)
-
-type Board = Gr NodeContext EdgeContext
-
 type NodeScores = Map Node Int
 
 type Mine = Node
@@ -30,10 +23,15 @@ data Future = Future { mine :: Mine
             deriving (Show, Eq)
 type Futures = Map Player [Future]
 
-data IndexedBoard = IndexedBoard { ibBoard :: Board
-                                 , ibMines :: Mines
-                                 }
+data StartingBoard = StartingBoard { sbBoard :: Gr () ()
+                                   , sbMines :: Mines
+                                   }
                   deriving (Show)
+
+data EdgeContext = EdgeContext { taken :: Maybe Player }
+                 deriving (Show, Eq)
+
+type Board = Gr () EdgeContext
 
 data Game = Game { gameBoard :: Board
                  , gameMines :: Mines
@@ -47,11 +45,7 @@ data Action = Action { estimatedScore :: Double
                      }
             deriving (Show)
 
-data GameState = GameState { stupid :: Double
-                           }
-               deriving (Show)
-
-data GameTree = GameTree { gameState :: GameState
+data GameTree = GameTree { gameState :: Game
                          , actions :: [(Action, GameTree)]
                          }
               deriving (Show)

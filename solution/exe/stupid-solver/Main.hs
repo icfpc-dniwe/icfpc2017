@@ -11,7 +11,7 @@ import DNIWE.Punt.Interface.Online
 import DNIWE.Punt.Interface.Protocol
 import DNIWE.Punt.Solver.Types
 import DNIWE.Punt.Solver.Game
-import DNIWE.Punt.Solver.Score (boardScores, playerScore)
+import DNIWE.Punt.Solver.Score (playerScore)
 import DNIWE.Punt.Solver.Stupid
 
 
@@ -80,9 +80,4 @@ playGame = do
             putStrLn $ "Validating player " ++ show player ++ " score, server " ++ show scoreScore ++ ", us " ++ show score'
             unless (scoreScore == score') $ fail "Invalid score"
 
-  let startGame = Game { gameBoard = ibBoard board
-                       , gameMines = ibMines board
-                       , gameScoring = boardScores board
-                       , gameFutures = []
-                       }
-  loop startGame (Pass { passPunter = myId })
+  loop (startingGame board) (Pass { passPunter = myId })

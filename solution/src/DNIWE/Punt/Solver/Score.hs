@@ -18,14 +18,15 @@ defaultScoringFunction = (^ 2)
 futuresScoringFunction :: Int -> Int
 futuresScoringFunction = (^ 3)
 
-boardScores :: IndexedBoard -> MineScores
-boardScores (IndexedBoard {..}) = M.unionsWith M.union $ map scoreOne $ S.toList ibMines
+boardScores :: StartingBoard -> MineScores
+boardScores (StartingBoard {..}) = M.unionsWith M.union $ map scoreOne $ S.toList sbMines
   where scoreOne mine = M.singleton mine $ M.fromList $ map (head . unLPath) $ spTree mine weightedBoard
-        weightedBoard = undir $ emap (const 1) ibBoard
+        weightedBoard = undir $ emap (const 1) sbBoard
 
 playerScore :: Player -> Game -> Int
 playerScore player (Game {..}) = sum (concatMap (\m -> map (defaultScore m) $ reachedOne m) $ S.toList gameMines) + (sum $ map (\ftr -> futureScore ftr) $ gameFutures M.! player)
   where reachedOne mine = mineReachable player gameBoard mine
+  
         defaultScore mine n = defaultScoringFunction $ gameScoring M.! mine M.! n
         futureScore (Future {..}) = if target `elem` (mineReachable player gameBoard mine) then ftrScore else -ftrScore
           where ftrScore = futuresScoringFunction $ gameScoring M.! mine M.! target

@@ -15,7 +15,6 @@ import Data.Aeson (ToJSON(..), FromJSON(..), genericParseJSON, genericToJSON, ge
 import Data.Aeson.Types (Options(..), SumEncoding(..), defaultOptions)
 
 import Data.Set (Set)
-import qualified Data.Set as S
 import Data.Text (Text)
 import GHC.Generics (Generic)
 
@@ -175,13 +174,12 @@ instance ToJSON SetupResponse where
   toEncoding = genericToEncoding jsonOptions
 
 
-boardFromMap :: BoardMap -> IndexedBoard
-boardFromMap (BoardMap {..}) = IndexedBoard { ibBoard = mkGraph nodes edges
-                                            , ibMines = mapMines
-                                            }
-  where nodes = map (\(Site {..}) -> (siteId, NodeContext { isMine = siteId `S.member` mapMines })) mapSites
-        edges = map (\(River {..}) -> (riverSource, riverTarget, notTaken)) mapRivers
-        notTaken = EdgeContext { taken = Nothing }
+boardFromMap :: BoardMap -> StartingBoard
+boardFromMap (BoardMap {..}) = StartingBoard { sbBoard = mkGraph nodes edges
+                                             , sbMines = mapMines
+                                             }
+  where nodes = map (\(Site {..}) -> (siteId, ())) mapSites
+        edges = map (\(River {..}) -> (riverSource, riverTarget, ())) mapRivers
 
 
 -- Gameplay
