@@ -8,29 +8,75 @@ import Data.Graph.Inductive.Graph
 import DNIWE.Punt.Solver.Types
 import DNIWE.Punt.Solver.Score
 
-startingGame :: StartingBoard -> [Future] -> Game
-startingGame board futures = Game { gameBoard = emap (const notTaken) $ sbBoard board
-                                  , gameMines = sbMines board
-                                  , gameScoring = boardScores board
-                                  , gameFutures = M.singleton Us futures
-                                  , gamePlayer = Us
-                                  }
-  where notTaken = EdgeContext { edgeTaken = Nothing }
 
 relabelEdge :: DynGraph gr => LEdge b -> gr a b -> gr a b
 relabelEdge e@(a, b, _) = insEdge e . delEdge (a, b)
 
-applyMove :: Player -> Edge -> Game -> Game
-applyMove p (a, b) game = game { gameBoard = relabelEdge (a, b, EdgeContext { edgeTaken = Just p }) $ gameBoard game }
 
-freeEdges :: Game -> [LEdge EdgeContext]
-freeEdges = filter (\(_, _, ctx) -> isNothing $ edgeTaken ctx) . labEdges . gameBoard
+gameData :: StartingBoard -> [Future] -> PunterId -> Int -> GameData
+gameData board futures playerId totalPlayers =
+  GameData { gameStarting = board
+           , gameScoring = boardScores board
+           , gameFutures = M.singleton Us futures
+           , gameBeforeN = playerId
+           , gameAfterN = totalPlayers - (playerId + 1)
+           }
 
-maybeFuture :: Game -> Edge -> Maybe Edge
+initialState :: GameData -> GameState
+initialState (GameData {..}) = GameState { stateBoard = emap (const initialEdge) $ sbBoard gameStarting
+                                         , statePlayer = Us
+                                         }
+  where initialEdge = EdgeContext { edgeTaken = Nothing }
+
+
+applyMove :: Player -> Edge -> GameState -> GameState
+applyMove p edge state = state { stateBoard = relabelEdge (toLEdge edge $ EdgeContext { edgeTaken = Just p }) $ stateBoard state }
+
+freeEdges :: GameState -> [LEdge EdgeContext]
+freeEdges = filter (isNothing . edgeTaken . edgeLabel) . labEdges . stateBoard
+
+maybeFuture :: GameData -> Edge -> Maybe Edge
 maybeFuture game (a, b)
   | aMine && not bMine = Just (a, b)
   | bMine && not aMine = Just (b, a)
   | otherwise = Nothing
 
-  where aMine = a `S.member` gameMines game
-        bMine = b `S.member` gameMines game
+  where aMine = mineCheck a 
+        bMine = mineCheck b
+        mineCheck n = n `S.member` sbMines (gameStarting game)
+
+nextPlayer :: GameData -> Player -> Player
+nextPlayer game (Before n)
+  | n + 1 == gameBeforeN game = Us
+  | otherwise = Before (n + 1)
+nextPlayer game Us
+  | gameAfterN game == 0 =
+    if gameBeforeN game == 0
+    then Us
+    else Before 0
+  | otherwise = After 0
+nextPlayer game (After n)
+  | n + 1 == gameAfterN game =
+    if gameBeforeN game == 0
+    then Us
+    else Before 0
+  | otherwise = After (n + 1)
+
+
+gameStateTree :: GameData -> GameState -> GameTree
+gameStateTree game@(GameData {..}) state =
+  GameTree { treeState = state
+           , treeActions = map nextAction $ freeEdges state
+           }
+  where nextAction ledge = (estimateAction game state ledge, gameStateTree game newPlayerState)
+          where newState = applyMove (statePlayer state) edge state
+                newPlayerState = newState { statePlayer = nextPlayer game $ statePlayer state }
+                edge = toEdge ledge
+
+estimateAction :: GameData -> GameState -> LEdge EdgeContext -> Action
+estimateAction game state ledge =
+  Action { actionScore = playerScore game newState
+         , actionEdge = edge
+         }
+  where newState = applyMove (statePlayer state) edge state
+        edge = toEdge ledge

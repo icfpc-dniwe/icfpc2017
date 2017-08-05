@@ -23,18 +23,17 @@ boardScores (StartingBoard {..}) = M.unionsWith M.union $ map scoreOne $ S.toLis
   where scoreOne mine = M.singleton mine $ M.fromList $ map (head . unLPath) $ spTree mine weightedBoard
         weightedBoard = undir $ emap (const 1) sbBoard
 
-playerScore :: Game -> Int
-playerScore (Game {..}) = totalDefault + futureDefault
-  where curReachable = mineReachable gamePlayer gameBoard
+playerScore :: GameData -> GameState -> Int
+playerScore (GameData {..}) (GameState {..}) = totalDefault + futureDefault
+  where curReachable = mineReachable statePlayer stateBoard
 
-        totalDefault = sum $ concatMap (\m -> map (defaultScore m) $ curReachable m) $ S.toList gameMines
-        futureDefault = sum $ map (\ftr -> futureScore ftr) $ M.findWithDefault [] gamePlayer gameFutures
+        totalDefault = sum $ concatMap (\m -> map (defaultScore m) $ curReachable m) $ S.toList $ sbMines gameStarting
+        futureDefault = sum $ map (\ftr -> futureScore ftr) $ M.findWithDefault [] statePlayer gameFutures
 
         defaultScore mine n = defaultScoringFunction $ gameScoring M.! mine M.! n
         futureScore (Future mine target) = if target `elem` curReachable mine then ftrScore else -ftrScore
           where ftrScore = futuresScoringFunction $ gameScoring M.! mine M.! target
 
 mineReachable :: Player -> Board -> Node -> [Node]
-mineReachable player graph start = xdfsWith marked (\(_, n, _, _) -> n) [start] graph
-  where marked (from, _, _, to) = map snd $ filterTaken from ++ filterTaken to
-        filterTaken = filter ((== Just player) . edgeTaken . fst)
+mineReachable player graph start = xdfsWith (map snd . filterTaken . lneighbors') node' [start] graph
+  where filterTaken = filter ((== Just player) . edgeTaken . fst)

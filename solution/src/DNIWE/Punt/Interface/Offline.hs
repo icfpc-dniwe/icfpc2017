@@ -52,7 +52,7 @@ jsonOptions = defaultOptions {
 -- Gameplay
 -- Scoring
 -- Timeout
--- GameState
+-- SGameState
 {-
 ------------
 -- TODO rem
@@ -107,7 +107,7 @@ instance FromJSON SetupIn where
   parseJSON = genericParseJSON jsonOptions
 
 
-data SetupOut = SetupOut { soReady :: PunterId, soGameState :: GameState }
+data SetupOut = SetupOut { soReady :: PunterId, soSGameState :: SGameState }
   deriving (Show, Eq, Generic)
 
 instance ToJSON SetupOut where
@@ -153,14 +153,14 @@ P → Smove ] {"state" : state0}
 
 
 type Nat = Int
-type RawGameState = Text
+type RawSGameState = Text
 
 
--- GameState
-data GameState = GameState -- TODO: here goes custom structure
+-- SGameState
+data SGameState = SGameState -- TODO: here goes custom structure
   deriving (Show, Eq, Generic)
 
-instance Serialize GameState
+instance Serialize SGameState
 
 putBase64 :: (Serialize a) => a -> Text
 putBase64 = T.decodeUtf8 . Base64.encode . runPut . put
@@ -183,13 +183,13 @@ data IncomingMessage
      -- | ISetup
      -- | IGameplay
      -- | IScore
-     | ITimeout { itTimeout :: GameState }
+     | ITimeout { itTimeout :: SGameState }
   deriving (Show, Eq)
 
 data OutgoingMessage
      = OHandshake { ohName     :: Text                           }
-     | OSetup     { osPunterId :: PunterId, osState :: GameState }
-     | OGameplay  { ogMove     :: Move    , ogState :: GameState }
+     | OSetup     { osPunterId :: PunterId, osState :: SGameState }
+     | OGameplay  { ogMove     :: Move    , ogState :: SGameState }
   deriving (Show, Eq)
 
 fromRaw :: RawIncomingMessage -> IncomingMessage
@@ -204,21 +204,21 @@ toRaw (OHandshake {..}) = ROHandshake { rohMe = ohName }
 toRaw (OSetup    {..}) = ROSetup { rosReady = osPunterId, rosState = putBase64 osState }
 toRaw (OGameplay {..}) = ROGameplay { rogMove = toRawMove ogMove, rogState = putBase64 ogState }
 
--- toRaw (OGameplay {..}) = ROGameplay (RawMoveState (toRawMove ogMove, RawGameStateStandalone $ putBase64 ogState))
+-- toRaw (OGameplay {..}) = ROGameplay (RawMoveState (toRawMove ogMove, RawSGameStateStandalone $ putBase64 ogState))
 
 
 data RawIncomingMessage
      = RIHandshake { rihYou     :: Text                                                         }
      -- | RISetup     { risPunter  :: PunterId   , risPunters :: Nat       , risMap :: RawBoardMap }
-     -- | RIGameplay  { rigMove    :: Moves      , rigState   :: GameState                         }
-     -- | RIScore     { risStop    :: MovesScores, risState   :: GameState                         }
-     | RITimeout   { ritTimeout :: RawGameState                                                    }
+     -- | RIGameplay  { rigMove    :: Moves      , rigState   :: SGameState                         }
+     -- | RIScore     { risStop    :: MovesScores, risState   :: SGameState                         }
+     | RITimeout   { ritTimeout :: RawSGameState                                                    }
   deriving (Show, Eq, Generic)
 
 data RawOutgoingMessage
      = ROHandshake { rohMe    :: Text                            }
-     | ROSetup     { rosReady :: PunterId, rosState :: RawGameState }
-     | ROGameplay  { rogState :: RawGameState, rogMove :: RawMove }
+     | ROSetup     { rosReady :: PunterId, rosState :: RawSGameState }
+     | ROGameplay  { rogState :: RawSGameState, rogMove :: RawMove }
   deriving (Show, Eq, Generic)
 
 
@@ -250,23 +250,23 @@ toRawMove (Pass {..}) = RawPass { rpPunter = passPunterId }
 
 
 
-newtype RawGameStateStandalone = RawGameStateStandalone { rssState :: RawGameState } deriving (Show, Eq, Generic)
+newtype RawSGameStateStandalone = RawSGameStateStandalone { rssState :: RawSGameState } deriving (Show, Eq, Generic)
 
-instance FromJSON RawGameStateStandalone where
+instance FromJSON RawSGameStateStandalone where
   parseJSON = genericParseJSON jsonOptions
 
-instance ToJSON RawGameStateStandalone where
+instance ToJSON RawSGameStateStandalone where
   toJSON = genericToJSON jsonOptions
   toEncoding = genericToEncoding jsonOptions
 
 
 
-newtype RawMoveState = RawMoveState (RawMove, RawGameStateStandalone) deriving (Show, Eq, Generic)
+newtype RawMoveState = RawMoveState (RawMove, RawSGameStateStandalone) deriving (Show, Eq, Generic)
 
 instance FromJSON RawMoveState where
   parseJSON o@(Object v) = do
     rogMove  <- parseJSON o
-    rogState <- RawGameStateStandalone <$> (v .: "state")
+    rogState <- RawSGameStateStandalone <$> (v .: "state")
     return $ RawMoveState (rogMove, rogState)
 
   parseJSON _ = error "type mismatch"
@@ -382,7 +382,7 @@ Move =
 -- BoardMap
 -- Moves
 -- Moves+Scores
--- GameState
+-- SGameState
 
 
 

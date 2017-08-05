@@ -50,48 +50,50 @@ playGame = do
       myId = srPunter setup
 
       playerFromId pid
+        | pid < myId = Before pid
         | pid == myId = Us
-        | otherwise = Other pid
+        | otherwise = After pid
 
-      applyMove' (Pass _) game = game
-      applyMove' (Claim {..}) game = applyMove (playerFromId claimPunter) (claimSource, claimTarget) game
+      applyMove' (Pass _) state = state
+      applyMove' (Claim {..}) state = applyMove (playerFromId claimPunter) (claimSource, claimTarget) state
 
-  let preGame = startingGame board []
+  let preGame = gameData board [] myId (srPunters setup)
       futures
-        | settingsFutures = take 1 $ mapMaybe (maybeFuture preGame) $ stupidSolver' preGame
+        | settingsFutures = take 1 $ mapMaybe (maybeFuture preGame) $ stupidSolver' $ gameStateTree preGame (initialState preGame)
         | otherwise = []
       setupResp = SetupResponse { srReady = myId
                                 , srFutures = map (uncurry PFuture) futures
                                 }
+      game = gameData board (map (uncurry Future) futures) myId (srPunters setup)
 
   lift . putStrLn $ "Sending setup response: " ++ show setupResp
   yield $ toJSON setupResp
 
-  let loop game prevMove = awaitJSON >>= \case
+  let loop state prevMove = awaitJSON >>= \case
         GameReq greq@(GameplayRequest {..}) -> do
           lift . putStrLn $ "Got move: " ++ show greq
           unless (prevMove `elem` movesMoves grMove) $ fail "My move was rejected"
 
-          let game' = foldr applyMove' game (movesMoves grMove)
-              move = case stupidSolver game' of
+          let newState = foldr applyMove' state (movesMoves grMove)
+              move = case stupidSolver $ gameStateTree game newState of
                        Nothing -> Pass { passPunter = myId }
                        Just (a, b) -> Claim { claimPunter = myId, claimSource = a, claimTarget = b }
 
-          lift . putStrLn $ "New game state: " ++ show game'
+          lift . putStrLn $ "New game state: " ++ show newState
           lift . putStrLn $ ""
           lift . putStrLn $ "Sending move: " ++ show move
           lift . putStrLn $ ""
           yield $ toJSON move
 
-          loop game' move
+          loop newState move
 
         StopReq stop@(StopRequest (Stop {..})) -> do
           lift . putStrLn $ "Got stop: " ++ show stop
-          let finalGame = foldr applyMove' game (prevMove:stopMoves)
+          let finalState = foldr applyMove' state (prevMove:stopMoves)
           lift $ forM_ stopScores $ \(Score {..}) -> do
             let player = playerFromId scorePunter
-                score' = playerScore finalGame { gamePlayer = player }
+                score' = playerScore game $ finalState { statePlayer = player }
             putStrLn $ "Validating player " ++ show player ++ " score, server " ++ show scoreScore ++ ", us " ++ show score'
-            unless (scoreScore == score') $ fail "Invalid score"
+            unless (scoreScore == score' || (player /= Us && settingsFutures)) $ fail "Invalid score"
 
-  loop (startingGame board $ map (uncurry Future) futures) (Pass { passPunter = myId })
+  loop (initialState game) (Pass { passPunter = myId })

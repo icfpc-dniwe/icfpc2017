@@ -8,7 +8,7 @@ import Data.Graph.Inductive.PatriciaTree
 type SiteId = Int
 type PunterId = Int
 
-data Player = Us | Other !PunterId
+data Player = Us | After !PunterId | Before !PunterId
             deriving (Show, Eq, Ord)
 
 type NodeScores = Map Node Int
@@ -34,21 +34,25 @@ data EdgeContext = EdgeContext { edgeTaken :: Maybe Player
 
 type Board = Gr () EdgeContext
 
-data Game = Game { gameBoard :: Board
-                 , gameMines :: Mines
-                 , gameFutures :: Futures
-                 , gameScoring :: MineScores
-                 , gamePlayer :: Player
-                 }
-          deriving (Show)
+data GameData = GameData { gameStarting :: StartingBoard
+                         , gameScoring :: MineScores
+                         , gameFutures :: Futures
+                         , gameBeforeN :: Int
+                         , gameAfterN :: Int
+                         }
+              deriving (Show)
+
+data GameState = GameState { stateBoard :: Board
+                           , statePlayer :: Player
+                           }
+               deriving (Show)
 
 data Action = Action { actionEdge :: Edge
-                     , actionScore :: Double
-                     , actionFeatures :: [Double]
+                     , actionScore :: Int
                      }
             deriving (Show)
 
-data GameTree = GameTree { treeState :: Game
+data GameTree = GameTree { treeState :: GameState
                          , treeActions :: [(Action, GameTree)]
                          }
               deriving (Show)
