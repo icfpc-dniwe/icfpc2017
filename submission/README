@@ -1,0 +1,14 @@
+Team name:	DNIWE :: a
+E-mail:	ab@fmap.me
+Members:
+abbradar
+alvearian
+aske
+dantragof
+illgeo
+vuvko
+zohl
+
+Our solutions is just NMax algorithm with stupid scorring function (just the scores every player gets with every move).
+Only twist is using stupid futures estimations.
+One prediction is made with length 1 (first of all possible with length 1).
