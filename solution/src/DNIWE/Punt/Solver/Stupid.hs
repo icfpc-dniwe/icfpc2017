@@ -10,8 +10,11 @@ import DNIWE.Punt.Solver.Score
 import DNIWE.Punt.Solver.Game
 
 stupidSolver :: Game -> Maybe (Node, Node)
-stupidSolver g@(Game {..}) =
-  fmap fst $ listToMaybe $ sortBy (comparing (Down . snd))
+stupidSolver = listToMaybe . stupidSolver'
+
+stupidSolver' :: Game -> [(Node, Node)]
+stupidSolver' g@(Game {..}) =
+  map fst $ sortBy (comparing (Down . snd))
   $ map (\(a, b, _) -> ((a, b), predictScore (a, b)))
   $ freeEdges g
   where predictScore (a, b) = playerScore $ g { gameBoard = relabelEdge (a, b, EdgeContext { edgeTaken = Just gamePlayer }) gameBoard }

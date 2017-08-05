@@ -56,11 +56,13 @@ playGame = do
       applyMove' (Pass _) game = game
       applyMove' (Claim {..}) game = applyMove (playerFromId claimPunter) (claimSource, claimTarget) game
 
-  let Just (ssSrc, ssDst) = stupidSolver $ startingGame board []
-  let futures = if settingsFutures then [Future ssSrc ssDst] else []
+  let preGame = startingGame board []
+      futures
+        | settingsFutures = take 1 $ mapMaybe (maybeFuture preGame) $ stupidSolver' preGame
+        | otherwise = []
 
   yield . toJSON $ SetupResponse { srReady = myId
-                                 , srFutures = map (\(Future a b) -> PFuture a b) futures
+                                 , srFutures = map (uncurry PFuture) futures
                                  }
 
   let loop game prevMove = awaitJSON >>= \case
@@ -88,4 +90,4 @@ playGame = do
             putStrLn $ "Validating player " ++ show player ++ " score, server " ++ show scoreScore ++ ", us " ++ show score'
             unless (scoreScore == score') $ fail "Invalid score"
 
-  loop (startingGame board futures) (Pass { passPunter = myId })
+  loop (startingGame board $ map (uncurry Future) futures) (Pass { passPunter = myId })

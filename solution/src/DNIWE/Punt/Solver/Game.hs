@@ -2,6 +2,7 @@ module DNIWE.Punt.Solver.Game where
 
 import Data.Maybe
 import qualified Data.Map as M
+import qualified Data.Set as S
 import Data.Graph.Inductive.Graph
 
 import DNIWE.Punt.Solver.Types
@@ -24,3 +25,9 @@ applyMove p (a, b) game = game { gameBoard = relabelEdge (a, b, EdgeContext { ed
 
 freeEdges :: Game -> [LEdge EdgeContext]
 freeEdges = filter (\(_, _, ctx) -> isNothing $ edgeTaken ctx) . labEdges . gameBoard
+
+maybeFuture :: Game -> Edge -> Maybe Edge
+maybeFuture game (a, b)
+  | a `S.member` gameMines game = Just (a, b)
+  | b `S.member` gameMines game = Just (b, a)
+  | otherwise = Nothing
