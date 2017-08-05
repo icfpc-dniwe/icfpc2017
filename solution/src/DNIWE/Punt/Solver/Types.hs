@@ -19,12 +19,14 @@ newtype EdgeContext = EdgeContext { taken :: Maybe Player }
 type Board = Gr NodeContext EdgeContext
 
 type NodeScores = Map Node Int
-type MineScores = Map Node NodeScores
 
 type Mine = Node
+type MineScores = Map Mine NodeScores
 type Mines = Set Node
 
-data Future = Mine Node
+data Future = Future { mine :: Mine
+                     , target :: Node
+                     }
             deriving (Show, Eq)
 type Futures = Map Player Future
 
