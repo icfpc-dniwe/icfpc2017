@@ -129,7 +129,7 @@ instance ToJSON BoardMap where
   toEncoding = genericToEncoding jsonOptions
 
 data Settings = Settings {
-  futures :: Bool
+  settingsFutures :: Bool
   } deriving (Show, Eq, Generic)
 
 instance FromJSON Settings where
