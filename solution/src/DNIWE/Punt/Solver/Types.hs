@@ -28,7 +28,7 @@ data Future = Future { mine :: Mine
                      , target :: Node
                      }
             deriving (Show, Eq)
-type Futures = Map Player Future
+type Futures = [Future]
 
 data IndexedBoard = IndexedBoard { ibBoard :: Board
                                  , ibMines :: Mines
