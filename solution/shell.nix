@@ -37,6 +37,7 @@ let
   haskellPackages = haskellPackages_.override {
     overrides = self: super: {
       mkDerivation = args: super.mkDerivation (args // { enableLibraryProfiling = true; });
+      fgl = self.callPackage ./fgl { };
     };
   };
 

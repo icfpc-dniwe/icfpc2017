@@ -8,6 +8,7 @@ import qualified Data.Aeson as JSON (Value)
 import Data.Aeson (FromJSON, Result(..), toJSON, fromJSON)
 import Data.Conduit (Conduit, ConduitM, await, yield)
 import Data.Default.Class
+import Control.DeepSeq
 
 import DNIWE.Punt.Interface.Online
 import DNIWE.Punt.Interface.Protocol
@@ -49,13 +50,8 @@ playGame = do
       Settings {..} = fromMaybe def $ srSettings setup
       myId = srPunter setup
 
-      playerFromId pid
-        | pid < myId = Before pid
-        | pid == myId = Us
-        | otherwise = After pid
-
       applyMove' (Pass _) state = state
-      applyMove' (Claim {..}) state = applyMove (playerFromId claimPunter) (claimSource, claimTarget) state
+      applyMove' (Claim {..}) state = applyMove claimPunter (claimSource, claimTarget) state
 
       solver game state = map (actionEdge . fst) $ treeActions $ snd $ stupidGameTree (3 * srPunters setup) game state
 
@@ -69,7 +65,7 @@ playGame = do
       game = gameData board (map (uncurry Future) futures) myId (srPunters setup)
 
   lift . putStrLn $ "Sending setup response: " ++ show setupResp
-  yield $ toJSON setupResp
+  yield $ toJSON $ game `deepseq` setupResp
 
   let loop state prevMove = awaitJSON >>= \case
         GameReq greq@(GameplayRequest {..}) -> do
@@ -93,9 +89,8 @@ playGame = do
           lift . putStrLn $ "Got stop: " ++ show stop
           let finalState = foldr applyMove' state (prevMove:stopMoves)
           lift $ forM_ stopScores $ \(Score {..}) -> do
-            let player = playerFromId scorePunter
-                score' = playerScore game $ finalState { statePlayer = player }
-            putStrLn $ "Validating player " ++ show player ++ " score, server " ++ show scoreScore ++ ", us " ++ show score'
-            unless (scoreScore == score' || (player /= Us && settingsFutures)) $ fail "Invalid score"
+            let score' = playerScore game $ finalState { statePlayer = scorePunter }
+            putStrLn $ "Validating player " ++ show scorePunter ++ " score, server " ++ show scoreScore ++ ", us " ++ show score'
+            unless (scoreScore == score' || (scorePunter /= myId && settingsFutures)) $ fail "Invalid score"
 
   loop (initialState game) (Pass { passPunter = myId })

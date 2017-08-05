@@ -34,6 +34,6 @@ playerScore (GameData {..}) (GameState {..}) = totalDefault + futureDefault
         futureScore (Future mine target) = if target `elem` curReachable mine then ftrScore else -ftrScore
           where ftrScore = futuresScoringFunction $ gameScoring M.! mine M.! target
 
-mineReachable :: Player -> Board -> Node -> [Node]
+mineReachable :: PunterId -> Board -> Node -> [Node]
 mineReachable player graph start = xdfsWith (map snd . filterTaken . lneighbors') node' [start] graph
   where filterTaken = filter ((== Just player) . edgeTaken . fst)
