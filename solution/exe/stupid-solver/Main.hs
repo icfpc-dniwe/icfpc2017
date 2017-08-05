@@ -78,7 +78,9 @@ playGame = do
                        Just (a, b) -> Claim { claimPunter = myId, claimSource = a, claimTarget = b }
 
           lift . putStrLn $ "New game state: " ++ show game'
+          lift . putStrLn $ ""
           lift . putStrLn $ "Sending move: " ++ show move
+          lift . putStrLn $ ""
           yield $ toJSON move
 
           loop game' move
