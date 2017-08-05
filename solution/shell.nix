@@ -31,9 +31,14 @@ let
         license = stdenv.lib.licenses.bsd3;
       };
 
-  haskellPackages = if compiler == "default"
+  haskellPackages_ = if compiler == "default"
                        then pkgs.haskellPackages
                        else pkgs.haskell.packages.${compiler};
+  haskellPackages = haskellPackages_.override {
+    overrides = self: super: {
+      # mkDerivation = args: super.mkDerivation (args // { enableLibraryProfiling = true; });
+    };
+  };
 
   drv = haskellPackages.callPackage f {};
 

@@ -61,17 +61,3 @@ nextPlayer game (After n)
     then Us
     else Before 0
   | otherwise = After (n + 1)
-
-
-gameStateTree :: GameData -> GameState -> GameTree ()
-gameStateTree game@(GameData {..}) state =
-  GameTree { treeState = state
-           , treeActions = map nextAction $ freeEdges state
-           }
-  where nextAction ledge = (action, gameStateTree game newPlayerState)
-          where newState = applyMove (statePlayer state) edge state
-                newPlayerState = newState { statePlayer = nextPlayer game $ statePlayer state }
-                edge = toEdge ledge
-                action = Action { actionEdge = edge
-                                , actionScore = ()
-                                }

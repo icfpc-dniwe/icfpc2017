@@ -57,7 +57,7 @@ playGame = do
       applyMove' (Pass _) state = state
       applyMove' (Claim {..}) state = applyMove (playerFromId claimPunter) (claimSource, claimTarget) state
 
-      solver game state = map (actionEdge . fst) $ treeActions $ snd $ stupidGameTree (3 * srPunters setup) game $ gameStateTree game state
+      solver game state = map (actionEdge . fst) $ treeActions $ snd $ stupidGameTree (3 * srPunters setup) game state
 
   let preGame = gameData board [] myId (srPunters setup)
       futures

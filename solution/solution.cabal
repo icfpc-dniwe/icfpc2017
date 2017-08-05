@@ -41,8 +41,9 @@ library
   default-extensions: FlexibleContexts
                     , OverloadedStrings
                     , RecordWildCards
+                    , ViewPatterns
   default-language:  Haskell2010
-  ghc-options:       -Wall
+  ghc-options:       -Wall -fprof-auto
 
 executable stupid-solver
   hs-source-dirs:    exe/stupid-solver
