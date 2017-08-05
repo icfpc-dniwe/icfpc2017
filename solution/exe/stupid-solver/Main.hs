@@ -60,10 +60,12 @@ playGame = do
       futures
         | settingsFutures = take 1 $ mapMaybe (maybeFuture preGame) $ stupidSolver' preGame
         | otherwise = []
+      setupResp = SetupResponse { srReady = myId
+                                , srFutures = map (uncurry PFuture) futures
+                                }
 
-  yield . toJSON $ SetupResponse { srReady = myId
-                                 , srFutures = map (uncurry PFuture) futures
-                                 }
+  lift . putStrLn $ "Sending setup response: " ++ show setupResp
+  yield $ toJSON setupResp
 
   let loop game prevMove = awaitJSON >>= \case
         GameReq greq@(GameplayRequest {..}) -> do

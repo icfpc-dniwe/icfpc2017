@@ -28,6 +28,9 @@ freeEdges = filter (\(_, _, ctx) -> isNothing $ edgeTaken ctx) . labEdges . game
 
 maybeFuture :: Game -> Edge -> Maybe Edge
 maybeFuture game (a, b)
-  | a `S.member` gameMines game = Just (a, b)
-  | b `S.member` gameMines game = Just (b, a)
+  | aMine && not bMine = Just (a, b)
+  | bMine && not aMine = Just (b, a)
   | otherwise = Nothing
+
+  where aMine = a `S.member` gameMines game
+        bMine = b `S.member` gameMines game
