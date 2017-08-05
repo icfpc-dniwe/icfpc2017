@@ -1,20 +1,26 @@
 module DNIWE.Punt.Solver.Game where
 
+import Data.Maybe
+import qualified Data.Map as M
 import Data.Graph.Inductive.Graph
 
 import DNIWE.Punt.Solver.Types
 import DNIWE.Punt.Solver.Score
 
-startingGame :: StartingBoard -> Futures -> Game
+startingGame :: StartingBoard -> [Future] -> Game
 startingGame board futures = Game { gameBoard = emap (const notTaken) $ sbBoard board
-                          , gameMines = sbMines board
-                          , gameScoring = boardScores board
-                          , gameFutures = futures
-                          }
-  where notTaken = EdgeContext { taken = Nothing }
+                                  , gameMines = sbMines board
+                                  , gameScoring = boardScores board
+                                  , gameFutures = M.singleton Us futures
+                                  , gamePlayer = Us
+                                  }
+  where notTaken = EdgeContext { edgeTaken = Nothing }
 
 relabelEdge :: DynGraph gr => LEdge b -> gr a b -> gr a b
 relabelEdge e@(a, b, _) = insEdge e . delEdge (a, b)
 
 applyMove :: Player -> Edge -> Game -> Game
-applyMove p (a, b) game = game { gameBoard = relabelEdge (a, b, EdgeContext { taken = Just p }) $ gameBoard game }
+applyMove p (a, b) game = game { gameBoard = relabelEdge (a, b, EdgeContext { edgeTaken = Just p }) $ gameBoard game }
+
+freeEdges :: Game -> [LEdge EdgeContext]
+freeEdges = filter (\(_, _, ctx) -> isNothing $ edgeTaken ctx) . labEdges . gameBoard

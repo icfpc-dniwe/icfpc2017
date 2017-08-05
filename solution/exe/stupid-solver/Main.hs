@@ -6,7 +6,6 @@ import Control.Monad.Trans.Class (lift)
 import qualified Data.Aeson as JSON (Value)
 import Data.Aeson (FromJSON, Result(..), toJSON, fromJSON)
 import Data.Conduit (Conduit, ConduitM, await, yield)
-import qualified Data.Map.Strict as M
 
 import DNIWE.Punt.Interface.Online
 import DNIWE.Punt.Interface.Protocol
@@ -54,8 +53,8 @@ playGame = do
       applyMove' (Pass _) game = game
       applyMove' (Claim {..}) game = applyMove (playerFromId claimPunter) (claimSource, claimTarget) game
 
-  let Just (ssSrc, ssDst) = stupidSolver $ startingGame board M.empty
-  let futures = M.singleton Us [Future ssSrc ssDst]
+  let Just (ssSrc, ssDst) = stupidSolver $ startingGame board []
+  let futures = [Future ssSrc ssDst]
 
   yield . toJSON $ SetupResponse { srReady = myId, srFutures = [PFuture ssSrc ssDst] }
 
@@ -80,7 +79,7 @@ playGame = do
           let finalGame = foldr applyMove' game (prevMove:stopMoves)
           lift $ forM_ stopScores $ \(Score {..}) -> do
             let player = playerFromId scorePunter
-                score' = playerScore player finalGame
+                score' = playerScore finalGame
             putStrLn $ "Validating player " ++ show player ++ " score, server " ++ show scoreScore ++ ", us " ++ show score'
             unless (scoreScore == score') $ fail "Invalid score"
 

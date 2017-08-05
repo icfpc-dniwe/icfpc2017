@@ -13,25 +13,25 @@ import Data.Graph.Inductive.Query.SP
 import DNIWE.Punt.Solver.Types
 
 defaultScoringFunction :: Int -> Int
-defaultScoringFunction = (^ 2)
+defaultScoringFunction = (^ (2 :: Int))
 
 futuresScoringFunction :: Int -> Int
-futuresScoringFunction = (^ 3)
+futuresScoringFunction = (^ (3 :: Int))
 
 boardScores :: StartingBoard -> MineScores
 boardScores (StartingBoard {..}) = M.unionsWith M.union $ map scoreOne $ S.toList sbMines
   where scoreOne mine = M.singleton mine $ M.fromList $ map (head . unLPath) $ spTree mine weightedBoard
         weightedBoard = undir $ emap (const 1) sbBoard
 
-playerScore :: Player -> Game -> Int
-playerScore player (Game {..}) = sum (concatMap (\m -> map (defaultScore m) $ reachedOne m) $ S.toList gameMines) + (sum $ map (\ftr -> futureScore ftr) $ gameFutures M.! player)
-  where reachedOne mine = mineReachable player gameBoard mine
-  
+playerScore ::  Game -> Int
+playerScore (Game {..}) = sum (concatMap (\m -> map (defaultScore m) $ curReachable m) $ S.toList gameMines) + (sum $ map (\ftr -> futureScore ftr) $ gameFutures M.! gamePlayer)
+  where curReachable = mineReachable gamePlayer gameBoard
+
         defaultScore mine n = defaultScoringFunction $ gameScoring M.! mine M.! n
-        futureScore (Future {..}) = if target `elem` (mineReachable player gameBoard mine) then ftrScore else -ftrScore
+        futureScore (Future mine target) = if target `elem` curReachable mine then ftrScore else -ftrScore
           where ftrScore = futuresScoringFunction $ gameScoring M.! mine M.! target
 
 mineReachable :: Player -> Board -> Node -> [Node]
 mineReachable player graph start = xdfsWith marked (\(_, n, _, _) -> n) [start] graph
   where marked (from, _, _, to) = map snd $ filterTaken from ++ filterTaken to
-        filterTaken = filter ((== Just player) . taken . fst)
+        filterTaken = filter ((== Just player) . edgeTaken . fst)
