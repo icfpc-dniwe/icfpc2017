@@ -84,7 +84,5 @@ playGame = do
                        , gameMines = ibMines board
                        , gameScoring = boardScores board
                        , gameFutures = []
-                       , defaultScoringFunction = (^ 2)
-                       , futuresScoringFunction = (^ 3)
                        }
   loop startGame (Pass { passPunter = myId })

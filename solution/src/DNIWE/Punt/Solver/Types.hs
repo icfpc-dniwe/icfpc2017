@@ -9,7 +9,7 @@ type SiteId = Int
 type PunterId = Int
 
 data Player = Us | Other !PunterId
-            deriving (Show, Eq)
+            deriving (Show, Eq, Ord)
 
 newtype NodeContext = NodeContext { isMine :: Bool }
                     deriving (Show, Eq)
@@ -39,8 +39,6 @@ data Game = Game { gameBoard :: Board
                  , gameMines :: Mines
                  , gameFutures :: Futures
                  , gameScoring :: MineScores
-                 , defaultScoringFunction :: Int -> Int
-                 , futuresScoringFunction :: Int -> Int
                  }
           deriving (Show)
 
