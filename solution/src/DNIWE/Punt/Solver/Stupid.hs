@@ -5,7 +5,6 @@ import qualified Data.Map.Strict as M
 import Data.List
 import Data.Ord
 import Data.Graph.Inductive.Graph
-import Debug.Trace
 
 import DNIWE.Punt.Solver.Types
 import DNIWE.Punt.Solver.Game

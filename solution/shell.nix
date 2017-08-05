@@ -36,7 +36,7 @@ let
                        else pkgs.haskell.packages.${compiler};
   haskellPackages = haskellPackages_.override {
     overrides = self: super: {
-      # mkDerivation = args: super.mkDerivation (args // { enableLibraryProfiling = true; });
+      mkDerivation = args: super.mkDerivation (args // { enableLibraryProfiling = true; });
     };
   };
 

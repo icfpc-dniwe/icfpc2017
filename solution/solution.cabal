@@ -42,6 +42,7 @@ library
                     , OverloadedStrings
                     , RecordWildCards
                     , ViewPatterns
+                    , DeriveGeneric
   default-language:  Haskell2010
   ghc-options:       -Wall -fprof-auto
 
@@ -62,7 +63,31 @@ executable stupid-solver
                     , ViewPatterns
                     , ScopedTypeVariables
   default-language:  Haskell2010
+
   ghc-options:       -Wall
+
+executable offline-solver
+  hs-source-dirs:    exe/offline-solver
+  main-is:           Main.hs
+  build-depends:     base >= 4.7 && < 5.0
+                   , solution
+                   , containers
+                   , aeson
+                   , conduit
+                   , transformers
+                   , bytestring
+                   , data-default-class
+                   , cereal
+                   , fgl
+  default-extensions: OverloadedStrings
+                    , RecordWildCards
+                    , LambdaCase
+                    , DeriveGeneric
+                    , ViewPatterns
+                    , ScopedTypeVariables
+  default-language:  Haskell2010
+  ghc-options:       -Wall
+
 
 test-suite protocol
   type:              exitcode-stdio-1.0
