@@ -151,20 +151,21 @@ instance ToJSON SetupRequest where
   toJSON = genericToJSON jsonOptions
   toEncoding = genericToEncoding jsonOptions
 
-data Future = Future {
+-- parser future
+data PFuture = PFuture {
   futureSource :: SiteId,
   futureTarget :: SiteId
   } deriving (Show, Eq, Generic)
 
-instance FromJSON Future where
+instance FromJSON PFuture where
   parseJSON = genericParseJSON jsonOptions
 
-instance ToJSON Future where
+instance ToJSON PFuture where
   toJSON = genericToJSON jsonOptions
   toEncoding = genericToEncoding jsonOptions
 
 -- P -> S: {"ready" : p, "futures" : futures}
-data SetupResponse = SetupResponse { srReady :: PunterId, srFutures :: [Future] }
+data SetupResponse = SetupResponse { srReady :: PunterId, srFutures :: [PFuture] }
     deriving (Show, Eq, Generic)
 
 instance FromJSON SetupResponse where

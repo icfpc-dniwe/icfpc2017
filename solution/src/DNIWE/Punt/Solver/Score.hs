@@ -21,7 +21,7 @@ boardGame (IndexedBoard {..}) = M.unionsWith M.union $ map scoreOne $ S.toList i
 playerScore :: Player -> Game -> Int
 playerScore player (Game {..}) = sum $ concatMap (\m -> map (\n -> gameScoring M.! m M.! n) $ reachedOne m) $ S.toList gameMines + 
   where reachedOne mine = mineReachable player gameBoard mine
-  		futureScore ftr@(mine, target) = if nodeReachable mine target then 
+  		futureScore ftr@{mine, target} = if nodeReachable mine target then 
 
 mineReachable :: Player -> Board -> Node -> [Node]
 mineReachable player graph start = xdfsWith marked (\(_, n, _, _) -> n) [start] graph
