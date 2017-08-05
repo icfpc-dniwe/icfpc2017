@@ -10,10 +10,10 @@ import DNIWE.Punt.Solver.Types
 import DNIWE.Punt.Solver.Game
 import DNIWE.Punt.Solver.Score
 
-newtype StupidScore = StupidScore { stupidScores :: Map Player Int }
+newtype StupidScore = StupidScore { stupidScores :: Map PunterId Int }
                     deriving (Show)
 
-stupidMetric :: Player -> StupidScore -> Int
+stupidMetric :: PunterId -> StupidScore -> Int
 stupidMetric player (StupidScore {..}) = myScore - othersMax
   where myScore = stupidScores M.! player
         othersMax = maximum $ map snd $ M.toList $ M.delete player stupidScores

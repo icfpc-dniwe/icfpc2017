@@ -6,6 +6,7 @@ import Data.Graph.Inductive.Graph
 import Data.Graph.Inductive.PatriciaTree
 import GHC.Generics (Generic)
 import Data.Serialize (Serialize(..))
+import Control.DeepSeq (NFData(..))
 
 type SiteId = Int
 type PunterId = Int
@@ -13,11 +14,6 @@ type PunterId = Int
 instance (Serialize a, Serialize b) => Serialize (Gr a b) where
   put g = put (labNodes g) >> put (labEdges g)
   get = mkGraph <$> get <*> get
-
-data Player = Us | After !PunterId | Before !PunterId
-            deriving (Show, Eq, Ord, Generic)
-
-instance Serialize Player where
 
 type NodeScores = Map Node Int
 
@@ -31,17 +27,19 @@ data Future = Future { futureMine :: Mine
             deriving (Show, Eq, Generic)
 
 instance Serialize Future where
+instance NFData Future where
 
-type Futures = Map Player [Future]
+type Futures = Map PunterId [Future]
 
-data StartingBoard = StartingBoard { sbBoard :: Gr () ()
-                                   , sbMines :: Mines
+data StartingBoard = StartingBoard { sbBoard :: !(Gr () ())
+                                   , sbMines :: !Mines
                                    }
                   deriving (Show, Eq, Generic)
 
 instance Serialize StartingBoard where
+instance NFData StartingBoard where
 
-data EdgeContext = EdgeContext { edgeTaken :: Maybe Player
+data EdgeContext = EdgeContext { edgeTaken :: !(Maybe PunterId)
                                }
                  deriving (Show, Eq, Ord, Generic)
 
@@ -49,29 +47,30 @@ instance Serialize EdgeContext where
 
 type Board = Gr () EdgeContext
 
-data GameData = GameData { gameStarting :: StartingBoard
-                         , gameScoring :: MineScores
-                         , gameFutures :: Futures
-                         , gameBeforeN :: Int
-                         , gameAfterN :: Int
+data GameData = GameData { gameStarting :: !StartingBoard
+                         , gameScoring :: !MineScores
+                         , gameFutures :: !Futures
+                         , gameMyId :: !PunterId
+                         , gamePlayersN :: !Int
                          }
               deriving (Show, Eq, Generic)
 
 instance Serialize GameData where
+instance NFData GameData where
 
-data GameState = GameState { stateBoard :: Board
-                           , statePlayer :: Player
+data GameState = GameState { stateBoard :: !Board
+                           , statePlayer :: !PunterId
                            }
                deriving (Show, Eq, Generic)
 
 instance Serialize GameState where
 
-data Action a = Action { actionEdge :: Edge
-                       , actionScore :: a
+data Action a = Action { actionEdge :: !Edge
+                       , actionScore :: !a
                        }
               deriving (Show, Eq, Generic)
 
-data GameTree a = GameTree { treeState :: GameState
+data GameTree a = GameTree { treeState :: !GameState
                            , treeActions :: [(Action a, GameTree a)]
                            }
                 deriving (Show, Eq, Generic)

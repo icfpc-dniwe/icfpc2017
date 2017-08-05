@@ -38,6 +38,7 @@ library
                    , fgl
                    , conduit
                    , conduit-extra
+                   , deepseq
   default-extensions: FlexibleContexts
                     , OverloadedStrings
                     , RecordWildCards
@@ -57,6 +58,7 @@ executable stupid-solver
                    , transformers
                    , bytestring
                    , data-default-class
+                   , deepseq
   default-extensions: OverloadedStrings
                     , RecordWildCards
                     , LambdaCase
