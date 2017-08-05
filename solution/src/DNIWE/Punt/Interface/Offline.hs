@@ -10,7 +10,7 @@ module DNIWE.Punt.Interface.Offline where
 import Data.Serialize (Serialize(..), runGet, runPut)
 
 import Data.Char (isUpper, toLower)
-import Data.Aeson (Value(..), ToJSON(..), FromJSON(..), genericParseJSON, genericToJSON, genericToEncoding, (.:), withObject)
+import Data.Aeson (Value(..), ToJSON(..), FromJSON(..), genericParseJSON, genericToJSON, genericToEncoding, (.:), withObject, encode)
 import Data.Aeson.Types (Options(..), SumEncoding(..), defaultOptions)
 
 import Data.Aeson (fromEncoding)
@@ -181,9 +181,9 @@ data Move
 data IncomingMessage
      = IHandshake { ihName :: Text }
      -- | ISetup
-     -- | IGameplay
-     -- | IScore
-     | ITimeout { itTimeout :: SGameState }
+     | IGameplay  { igMoves :: [Move], igState :: SGameState }
+     | IScore { isMoves :: [Move], isScores :: [(Int, Int)], isState :: SGameState }
+     | ITimeout   { itTimeout :: SGameState }
   deriving (Show, Eq)
 
 data OutgoingMessage
@@ -195,35 +195,114 @@ data OutgoingMessage
 fromRaw :: RawIncomingMessage -> IncomingMessage
 fromRaw (RIHandshake {..}) = IHandshake { ihName = rihYou }
 -- fromRaw (RISetup    {..}) =
--- fromRaw (RIGameplay {..}) =
--- fromRaw (RIScore    {..}) =
+fromRaw (RIGameplay {..}) = IGameplay { igMoves = map fromRawMove . unwrapMoves $ rigMove, igState = getBase64 rigState }
+fromRaw (RIScore    {..}) = IScore {
+    isMoves = map fromRawMove . rmsMoves $ risStop
+  , isScores = map (\(RawScore {..}) -> (rscPunter, rscScore)) . rmsScores $ risStop
+  , isState = getBase64 risState }
 fromRaw (RITimeout {..}) = ITimeout { itTimeout = getBase64 ritTimeout }
 
 toRaw :: OutgoingMessage -> RawOutgoingMessage
 toRaw (OHandshake {..}) = ROHandshake { rohMe = ohName }
 toRaw (OSetup    {..}) = ROSetup { rosReady = osPunterId, rosState = putBase64 osState }
-toRaw (OGameplay {..}) = ROGameplay { rogMove = toRawMove ogMove, rogState = putBase64 ogState }
-
--- toRaw (OGameplay {..}) = ROGameplay (RawMoveState (toRawMove ogMove, RawSGameStateStandalone $ putBase64 ogState))
+toRaw (OGameplay {..}) = case ogMove of
+  Claim {..} -> ROGameplayClaim {
+      rogcClaim = RawClaim { rcPunter = claimPunterId, rcSource = fst claimEdge, rcTarget = snd claimEdge}
+    , rogcState = putBase64 ogState}
+  Pass  {..} -> ROGameplayPass {
+      rogpPass = RawPass { rpPunter = passPunterId }
+    , rogpState = putBase64 ogState }
 
 
 data RawIncomingMessage
      = RIHandshake { rihYou     :: Text                                                         }
      -- | RISetup     { risPunter  :: PunterId   , risPunters :: Nat       , risMap :: RawBoardMap }
-     -- | RIGameplay  { rigMove    :: Moves      , rigState   :: SGameState                         }
-     -- | RIScore     { risStop    :: MovesScores, risState   :: SGameState                         }
+     | RIGameplay  { rigMove    :: RawMoves      , rigState   :: RawSGameState                      }
+     | RIScore     { risStop    :: RawMovesScores, risState   :: RawSGameState                         }
      | RITimeout   { ritTimeout :: RawSGameState                                                    }
   deriving (Show, Eq, Generic)
 
 data RawOutgoingMessage
-     = ROHandshake { rohMe    :: Text                            }
-     | ROSetup     { rosReady :: PunterId, rosState :: RawSGameState }
-     | ROGameplay  { rogState :: RawSGameState, rogMove :: RawMove }
+     = ROHandshake      { rohMe    :: Text                            }
+     | ROSetup          { rosReady :: PunterId, rosState :: RawSGameState }
+     | ROGameplayClaim  { rogcState :: RawSGameState, rogcClaim :: RawClaim }
+     | ROGameplayPass   { rogpState :: RawSGameState, rogpPass :: RawPass }
   deriving (Show, Eq, Generic)
 
 
----
+data RawClaim = RawClaim { rcPunter :: PunterId, rcSource :: SiteId, rcTarget :: SiteId }
+  deriving (Show, Eq, Generic)
 
+instance FromJSON RawClaim where
+  parseJSON = genericParseJSON jsonOptions
+
+instance ToJSON RawClaim where
+  toJSON = genericToJSON jsonOptions
+  toEncoding = genericToEncoding jsonOptions
+
+
+data RawPass = RawPass { rpPunter :: PunterId }
+  deriving (Show, Eq, Generic)
+
+instance FromJSON RawPass where
+  parseJSON = genericParseJSON jsonOptions
+
+instance ToJSON RawPass where
+  toJSON = genericToJSON jsonOptions
+  toEncoding = genericToEncoding jsonOptions
+
+
+data RawMove
+  = RawMoveClaim { rmcClaim :: RawClaim }
+  | RawMovePass { rmpPass :: RawPass }
+  deriving (Show, Eq, Generic)
+
+instance FromJSON RawMove where
+  parseJSON = genericParseJSON jsonOptions
+
+instance ToJSON RawMove where
+  toJSON = genericToJSON jsonOptions
+  toEncoding = genericToEncoding jsonOptions
+
+fromRawMove :: RawMove -> Move
+fromRawMove (RawMoveClaim (RawClaim {..})) = Claim { claimPunterId = rcPunter, claimEdge = (rcSource, rcTarget) }
+fromRawMove (RawMovePass (RawPass {..})) = Pass { passPunterId = rpPunter }
+
+
+newtype RawMoves = RawMoves {unwrapMoves :: [RawMove]}
+  deriving (Show, Eq, Generic)
+
+instance FromJSON RawMoves where
+  parseJSON = genericParseJSON jsonOptions
+
+instance ToJSON RawMoves where
+  toJSON = genericToJSON jsonOptions
+  toEncoding = genericToEncoding jsonOptions
+
+
+data RawMovesScores = RawMovesScores { rmsMoves :: [RawMove], rmsScores :: [RawScore]}
+  deriving (Show, Eq, Generic)
+
+instance FromJSON RawMovesScores where
+  parseJSON = genericParseJSON jsonOptions
+
+instance ToJSON RawMovesScores where
+  toJSON = genericToJSON jsonOptions
+  toEncoding = genericToEncoding jsonOptions
+
+
+data RawScore = RawScore { rscPunter :: PunterId, rscScore :: Nat}
+  deriving (Show, Eq, Generic)
+
+instance FromJSON RawScore where
+  parseJSON = genericParseJSON jsonOptions
+
+instance ToJSON RawScore where
+  toJSON = genericToJSON jsonOptions
+  toEncoding = genericToEncoding jsonOptions
+
+---
+{-
 data RawMove
   = RawClaim { rcPunter :: PunterId, rcSource :: SiteId, rcTarget :: SiteId }
   | RawPass  { rpPunter :: PunterId }
@@ -355,7 +434,7 @@ instance ToJSON Moves where
 
 ----
 -}
-
+-}
 
 instance FromJSON RawIncomingMessage where
   parseJSON = genericParseJSON jsonOptions
@@ -372,7 +451,17 @@ instance ToJSON RawOutgoingMessage where
   toEncoding = genericToEncoding jsonOptions
 
 
-
+-- debug = encode $ RIScore {
+--       risStop = RawMovesScores {
+--           rmsMoves = RawMoves [
+--             RawMoveClaim RawClaim {rcPunter = 1, rcSource = 4, rcTarget = 2 }
+--           , RawMoveClaim RawClaim {rcPunter = 2, rcSource = 3, rcTarget = 4 }
+--           , RawMovePass  RawPass  {rpPunter = 3 }]
+--            , rmsScores = [
+--                  RawScore { rscPunter = 1, rscScore = 3 }
+--                , RawScore { rscPunter = 2, rscScore = 2 }
+--                , RawScore { rscPunter = 3, rscScore = 1 }]}
+--       , risState = ""}
 {-
 Move =
   {"claim" : {"punter" : PunterId, "source" : SiteId, "target" : SiteId}}

@@ -14,7 +14,7 @@ import Data.Aeson (FromJSON, Value)
 import qualified Data.Aeson as JSON (encode, decode)
 import qualified Data.Text as T
 
-import DNIWE.Punt.Interface.Offline (RawIncomingMessage(..), RawOutgoingMessage(..), IncomingMessage(..), OutgoingMessage(..), fromRaw, toRaw, GameState(..), RawMoveState(..), RawMove(..), Move(..), RawGameStateStandalone(..))
+import DNIWE.Punt.Interface.Offline (RawIncomingMessage(..), RawOutgoingMessage(..), IncomingMessage(..), OutgoingMessage(..), fromRaw, toRaw, SGameState(..), Move(..), RawClaim(..), RawPass(..), RawMoves(..), RawMove(..), RawMovesScores(..), RawScore(..))
 
 import Test.Hspec (Expectation, Spec, hspec, describe, it, pending, shouldSatisfy, shouldBe)
 import Test.Hspec.QuickCheck (prop)
@@ -52,35 +52,66 @@ checkDecode sample msg = (fmap fromRaw . JSON.decode $ sample) `shouldBe` (Just 
 
 checkEncode :: BSL.ByteString -> OutgoingMessage -> Expectation
 checkEncode sample msg = (JSON.encode . toRaw $ msg) `shouldBe` sample
-  
+
 
 spec :: Map FilePath BSL.ByteString -> Spec
 spec samples = do
   describe "RawIncomingMessage" $ do
     it "decodes Handshake" $ checkDecodeRaw (samples ! "incoming-handshake") RIHandshake { rihYou = "pidar" }
     it "decodes Setup    " $ pending
-    it "decodes Gameplay " $ pending
-    it "decodes Score    " $ pending
+    it "decodes Gameplay " $ checkDecodeRaw (samples ! "incoming-gameplay-1") RIGameplay {
+        rigMove = RawMoves [
+            RawMoveClaim RawClaim {rcPunter = 1, rcSource = 4, rcTarget = 2 }
+          , RawMoveClaim RawClaim {rcPunter = 2, rcSource = 3, rcTarget = 4 }
+          , RawMovePass  RawPass  {rpPunter = 3 }]
+      , rigState = "" }
+
+    it "decodes Score" $ checkDecodeRaw (samples ! "incoming-score-1") RIScore {
+      risStop = RawMovesScores {
+          rmsMoves = [
+            RawMoveClaim RawClaim {rcPunter = 1, rcSource = 4, rcTarget = 2 }
+          , RawMoveClaim RawClaim {rcPunter = 2, rcSource = 3, rcTarget = 4 }
+          , RawMovePass  RawPass  {rpPunter = 3 }]
+           , rmsScores = [
+                 RawScore { rscPunter = 1, rscScore = 3 }
+               , RawScore { rscPunter = 2, rscScore = 2 }
+               , RawScore { rscPunter = 3, rscScore = 1 }]}
+      , risState = ""}
+
+
+
     it "decodes Timeout  " $ checkDecodeRaw (samples ! "incoming-timeout") RITimeout { ritTimeout = "" }
 
   describe "RawOutgoingMessage" $ do
     it "encodes Handshake" $ checkEncodeRaw (samples ! "outgoing-handshake") ROHandshake { rohMe = "dniwe" }
     it "encodes Setup    " $ checkEncodeRaw (samples ! "outgoing-setup") ROSetup { rosReady = 42, rosState = "" }
     it "encodes Gameplay " $ do
-
-      checkEncodeRaw (samples ! "outgoing-gameplay-1") ROGameplay {rogMove = RawClaim { rcPunter = 1, rcSource = 4, rcTarget = 2 }, rogState = "" }
-      
-      -- checkEncodeRaw (samples ! "outgoing-gameplay-1") (ROGameplay $ RawMoveState (RawClaim { rcPunter = 1, rcSource = 2, rcTarget = 4 }, RawGameStateStandalone ""))
-      -- checkEncodeRaw (samples ! "outgoing-gameplay-2") (ROGameplay $ RawMoveState (RawPass { rpPunter = 1 }, RawGameStateStandalone "" ))
+      checkEncodeRaw (samples ! "outgoing-gameplay-1") ROGameplayClaim {rogcClaim = RawClaim {rcPunter = 1, rcSource = 4, rcTarget = 2 }, rogcState = "" }
+      checkEncodeRaw (samples ! "outgoing-gameplay-2") ROGameplayPass  {rogpPass = RawPass { rpPunter = 1 }, rogpState = "" }
 
   describe "IncomingMessage" $ do
     it "decodes Handshake" $ checkDecode (samples ! "incoming-handshake") IHandshake { ihName = "pidar" }
     it "decodes Setup    " $ pending
-    it "decodes Gameplay " $ pending
-    it "decodes Score    " $ pending
-    it "decodes Timeout  " $ checkDecode (samples ! "incoming-timeout") ITimeout { itTimeout = GameState }
+    it "decodes Gameplay " $ checkDecode (samples ! "incoming-gameplay-1") IGameplay {
+        igMoves = [
+            Claim {claimPunterId = 1, claimEdge = (4, 2) }
+          , Claim {claimPunterId = 2, claimEdge = (3, 4) }
+          , Pass  {passPunterId = 3 }]
+      , igState = SGameState }
+
+    it "decodes Score" $ checkDecode (samples ! "incoming-score-1") IScore {
+             isMoves = [
+                 Claim {claimPunterId = 1, claimEdge = (4, 2) }
+               , Claim {claimPunterId = 2, claimEdge = (3, 4) }
+               , Pass  {passPunterId = 3 }]
+           , isScores = [(1,3), (2,2), (3,1)]
+           , isState = SGameState}
+
+    it "decodes Timeout  " $ checkDecode (samples ! "incoming-timeout") ITimeout { itTimeout = SGameState }
 
   describe "OutgoingMessage" $ do
     it "encodes Handshake" $ checkEncode (samples ! "outgoing-handshake") OHandshake { ohName = "dniwe" }
-    it "encodes Setup    " $ checkEncode (samples ! "outgoing-setup") OSetup { osPunterId = 42, osState = GameState }
-    it "encodes Gameplay " $ pending
+    it "encodes Setup    " $ checkEncode (samples ! "outgoing-setup") OSetup { osPunterId = 42, osState = SGameState }
+    it "encodes Gameplay " $ do
+      checkEncode (samples ! "outgoing-gameplay-1") OGameplay {ogMove = Claim { claimPunterId = 1, claimEdge = (4, 2) }, ogState = SGameState }
+      checkEncode (samples ! "outgoing-gameplay-2") OGameplay {ogMove = Pass { passPunterId = 1 }, ogState = SGameState }
