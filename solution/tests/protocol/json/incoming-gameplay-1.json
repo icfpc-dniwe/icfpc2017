@@ -1,0 +1,7 @@
+{"move": {"moves": [
+    {"claim": {"punter":1,"source":4,"target":2}}
+  , {"claim": {"punter":2,"source":3,"target":4}}
+  , {"pass": {"punter":3}}
+]}
+ , "state": ""}
+

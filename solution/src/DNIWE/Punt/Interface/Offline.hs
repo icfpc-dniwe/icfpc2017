@@ -48,116 +48,11 @@ jsonOptions = defaultOptions {
   , constructorTagModifier = map toLower}
 
 
--- TODO
--- Gameplay
--- Scoring
--- Timeout
--- SGameState
-{-
-------------
--- TODO rem
-data Xxx = Xxx { }
-  deriving (Show, Eq, Generic)
-
-instance ToJSON Xxx where
-  toJSON = genericToJSON jsonOptions
-  toEncoding = genericToEncoding jsonOptions
-
-instance FromJSON Xxx where
-  parseJSON = genericParseJSON jsonOptions
-
-----------------
-
-
-
--- Handshake
-data HandshakeIn = HandshakeIn { hiMe :: Text }
-  deriving (Show, Eq, Generic)
-
-instance ToJSON HandshakeIn where
-  toJSON = genericToJSON jsonOptions
-  toEncoding = genericToEncoding jsonOptions
-
-instance FromJSON HandshakeIn where
-  parseJSON = genericParseJSON jsonOptions
-
-
-data HandshakeOut = HandshakeOut { hoYou :: Text }
-  deriving (Show, Eq, Generic)
-
-instance ToJSON HandshakeOut where
-  toJSON = genericToJSON jsonOptions
-  toEncoding = genericToEncoding jsonOptions
-
-instance FromJSON HandshakeOut where
-  parseJSON = genericParseJSON jsonOptions
-
-
-
--- Setup
-
-data SetupIn = SetupIn { siPunter :: PunterId, siPunters :: Nat, siMap :: BoardMap }
-  deriving (Show, Eq, Generic)
-
-instance ToJSON SetupIn where
-  toJSON = genericToJSON jsonOptions
-  toEncoding = genericToEncoding jsonOptions
-
-instance FromJSON SetupIn where
-  parseJSON = genericParseJSON jsonOptions
-
-
-data SetupOut = SetupOut { soReady :: PunterId, soSGameState :: SGameState }
-  deriving (Show, Eq, Generic)
-
-instance ToJSON SetupOut where
-  toJSON = genericToJSON jsonOptions
-  toEncoding = genericToEncoding jsonOptions
-
-instance FromJSON SetupOut where
-  parseJSON = genericParseJSON jsonOptions
-
--- Gameplay
-
-data GameplayIn = GameplayIn { giMove}
-  deriving (Show, Eq, Generic)
-
-instance ToJSON GameplayIn where
-  toJSON = genericToJSON jsonOptions
-  toEncoding = genericToEncoding jsonOptions
-
-instance FromJSON GameplayIn where
-  parseJSON = genericParseJSON jsonOptions
-
-
-
-data GameplayOut = GameplayOut { }
-  deriving (Show, Eq, Generic)
-
-instance ToJSON GameplayOut where
-  toJSON = genericToJSON jsonOptions
-  toEncoding = genericToEncoding jsonOptions
-
-instance FromJSON GameplayOut where
-  parseJSON = genericParseJSON jsonOptions
-
-
-
-S → P{"move" : {"moves" : moves}, "state" : state}
-P → Smove ] {"state" : state0}
--}
-
--- BoardMap
-
-
-
-
 type Nat = Int
 type RawSGameState = Text
 
 
--- SGameState
-data SGameState = SGameState -- TODO: here goes custom structure
+data SGameState = SGameState -- TODO: here goes custom structure: gamedata + gamestate
   deriving (Show, Eq, Generic)
 
 instance Serialize SGameState
@@ -180,7 +75,7 @@ data Move
 
 data IncomingMessage
      = IHandshake { ihName :: Text }
-     -- | ISetup
+     | ISetup { isPunterId :: PunterId, isPunters :: Nat, isGameBoard :: StartingBoard }
      | IGameplay  { igMoves :: [Move], igState :: SGameState }
      | IScore { isMoves :: [Move], isScores :: [(Int, Int)], isState :: SGameState }
      | ITimeout   { itTimeout :: SGameState }
@@ -194,7 +89,7 @@ data OutgoingMessage
 
 fromRaw :: RawIncomingMessage -> IncomingMessage
 fromRaw (RIHandshake {..}) = IHandshake { ihName = rihYou }
--- fromRaw (RISetup    {..}) =
+fromRaw (RISetup    {..}) = ISetup { isPunterId = risPunter, isPunters = risPunters, isGameBoard = boardFromMap risMap }
 fromRaw (RIGameplay {..}) = IGameplay { igMoves = map fromRawMove . unwrapMoves $ rigMove, igState = getBase64 rigState }
 fromRaw (RIScore    {..}) = IScore {
     isMoves = map fromRawMove . rmsMoves $ risStop
@@ -215,11 +110,11 @@ toRaw (OGameplay {..}) = case ogMove of
 
 
 data RawIncomingMessage
-     = RIHandshake { rihYou     :: Text                                                         }
-     -- | RISetup     { risPunter  :: PunterId   , risPunters :: Nat       , risMap :: RawBoardMap }
-     | RIGameplay  { rigMove    :: RawMoves      , rigState   :: RawSGameState                      }
+     = RIHandshake { rihYou     :: Text                                                                }
+     | RISetup     { risPunter  :: PunterId      , risPunters :: Nat           , risMap :: RawGameMap  }
+     | RIGameplay  { rigMove    :: RawMoves      , rigState   :: RawSGameState                         }
      | RIScore     { risStop    :: RawMovesScores, risState   :: RawSGameState                         }
-     | RITimeout   { ritTimeout :: RawSGameState                                                    }
+     | RITimeout   { ritTimeout :: RawSGameState                                                       }
   deriving (Show, Eq, Generic)
 
 data RawOutgoingMessage
@@ -229,6 +124,8 @@ data RawOutgoingMessage
      | ROGameplayPass   { rogpState :: RawSGameState, rogpPass :: RawPass }
   deriving (Show, Eq, Generic)
 
+
+-- Curses on you!
 
 data RawClaim = RawClaim { rcPunter :: PunterId, rcSource :: SiteId, rcTarget :: SiteId }
   deriving (Show, Eq, Generic)
@@ -301,62 +198,6 @@ instance ToJSON RawScore where
   toJSON = genericToJSON jsonOptions
   toEncoding = genericToEncoding jsonOptions
 
----
-{-
-data RawMove
-  = RawClaim { rcPunter :: PunterId, rcSource :: SiteId, rcTarget :: SiteId }
-  | RawPass  { rpPunter :: PunterId }
-  deriving (Show, Eq, Generic)
-
-instance FromJSON RawMove where
-  parseJSON = genericParseJSON jsonOptions
-
-instance ToJSON RawMove where
-  toJSON = genericToJSON jsonOptions
-  toEncoding = genericToEncoding jsonOptions {
-       sumEncoding = ObjectWithSingleField
-     , constructorTagModifier = map toLower . drop 3
-     }
-
-
-toRawMove :: Move -> RawMove
-toRawMove (Claim {..}) = RawClaim {
-    rcPunter = claimPunterId
-  , rcSource = fst claimEdge
-  , rcTarget = snd claimEdge}
-
-toRawMove (Pass {..}) = RawPass { rpPunter = passPunterId }
-
-
-
-newtype RawSGameStateStandalone = RawSGameStateStandalone { rssState :: RawSGameState } deriving (Show, Eq, Generic)
-
-instance FromJSON RawSGameStateStandalone where
-  parseJSON = genericParseJSON jsonOptions
-
-instance ToJSON RawSGameStateStandalone where
-  toJSON = genericToJSON jsonOptions
-  toEncoding = genericToEncoding jsonOptions
-
-
-
-newtype RawMoveState = RawMoveState (RawMove, RawSGameStateStandalone) deriving (Show, Eq, Generic)
-
-instance FromJSON RawMoveState where
-  parseJSON o@(Object v) = do
-    rogMove  <- parseJSON o
-    rogState <- RawSGameStateStandalone <$> (v .: "state")
-    return $ RawMoveState (rogMove, rogState)
-
-  parseJSON _ = error "type mismatch"
-
--- may cause problems
-instance ToJSON RawMoveState where
-  toJSON = genericToJSON jsonOptions
-  toEncoding = genericToEncoding jsonOptions {sumEncoding = ObjectWithSingleField}
-
-{-
--- BoardMap
 
 data Site = Site {
     siteId :: SiteId
@@ -383,58 +224,27 @@ instance ToJSON River where
   toEncoding = genericToEncoding jsonOptions
 
 
-data RawBoardMap = RawBoardMap {
-    mapSites  :: [Site]
-  , mapRivers :: [River]
-  , mapMines :: Set SiteId
+data RawGameMap = RawGameMap {
+    rgmSites  :: [Site]
+  , rgmRivers :: [River]
+  , rgmMines  :: Set SiteId
   } deriving (Show, Eq, Generic)
 
-instance FromJSON BoardMap where
+instance FromJSON RawGameMap where
   parseJSON = genericParseJSON jsonOptions
 
-instance ToJSON BoardMap where
-  toJSON = genericToJSON jsonOptions
-  toEncoding = genericToEncoding jsonOptions
-
----- Moves
-
-data Move
-  = Claim {claimPunter :: PunterId, claimSource :: SiteId, claimTarget :: SiteId}
-  | Pass  {passPunter :: PunterId}
-  deriving (Show, Eq, Generic)
-
-instance FromJSON Move where
-  parseJSON = genericParseJSON jsonOptions
-
-instance ToJSON Move where
+instance ToJSON RawGameMap where
   toJSON = genericToJSON jsonOptions
   toEncoding = genericToEncoding jsonOptions
 
 
-newtype Moves = Moves { movesMoves :: [Move] }
-    deriving (Show, Eq, Generic)
+boardFromMap :: RawGameMap -> StartingBoard
+boardFromMap (RawGameMap {..}) = StartingBoard {
+    sbBoard = mkGraph nodes edges
+  , sbMines = rgmMines } where
+  nodes = map (\(Site {..}) -> (siteId, ())) rgmSites
+  edges = map (\(River {..}) -> (riverSource, riverTarget, ())) rgmRivers
 
-instance FromJSON Moves where
-  parseJSON = genericParseJSON jsonOptions
-
-instance ToJSON Moves where
-  toJSON = genericToJSON jsonOptions
-  toEncoding = genericToEncoding jsonOptions
-
-
-data MovesScores = MovesScores { msMoves :: [Move], msScores :: [Score] }
-    deriving (Show, Eq, Generic)
-
-instance FromJSON Moves where
-  parseJSON = genericParseJSON jsonOptions
-
-instance ToJSON Moves where
-  toJSON = genericToJSON jsonOptions
-  toEncoding = genericToEncoding jsonOptions
-
-----
--}
--}
 
 instance FromJSON RawIncomingMessage where
   parseJSON = genericParseJSON jsonOptions
@@ -449,40 +259,3 @@ instance ToJSON RawIncomingMessage where
 instance ToJSON RawOutgoingMessage where
   toJSON = genericToJSON jsonOptions
   toEncoding = genericToEncoding jsonOptions
-
-
--- debug = encode $ RIScore {
---       risStop = RawMovesScores {
---           rmsMoves = RawMoves [
---             RawMoveClaim RawClaim {rcPunter = 1, rcSource = 4, rcTarget = 2 }
---           , RawMoveClaim RawClaim {rcPunter = 2, rcSource = 3, rcTarget = 4 }
---           , RawMovePass  RawPass  {rpPunter = 3 }]
---            , rmsScores = [
---                  RawScore { rscPunter = 1, rscScore = 3 }
---                , RawScore { rscPunter = 2, rscScore = 2 }
---                , RawScore { rscPunter = 3, rscScore = 1 }]}
---       , risState = ""}
-{-
-Move =
-  {"claim" : {"punter" : PunterId, "source" : SiteId, "target" : SiteId}}
-| {"pass" : {"punter" : PunterId}}
-
-
--- BoardMap
--- Moves
--- Moves+Scores
--- SGameState
-
-
-
-0. P → S{"me" : name}
-1. P → S{"ready" : p, "state" : state}
-2. P → S move + {"state" : state0}
-
-0. S → P{"you" : name}
-1. S → P{"punter" : p, "punters" : n, "map" : map}
-2. S → P{"move" : {"moves" : moves}, "state" : state}
-3. S → P{"stop" : {"moves" : moves, "scores" : scores}, "state" : state}
-4. S → P{"timeout" : t}
-
--}

@@ -26,7 +26,7 @@ type Futures = Map Player [Future]
 data StartingBoard = StartingBoard { sbBoard :: Gr () ()
                                    , sbMines :: Mines
                                    }
-                  deriving (Show)
+                  deriving (Show, Eq)
 
 data EdgeContext = EdgeContext { edgeTaken :: Maybe Player
                                }

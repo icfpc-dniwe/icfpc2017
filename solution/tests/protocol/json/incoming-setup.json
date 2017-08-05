@@ -1,0 +1,5 @@
+{"punter": 4, "punters": 8, "map" : {
+    "sites" : [{"id": 1}, {"id": 2}, {"id": 3}, {"id": 4}]
+  , "rivers": [{"source": 1, "target": 2}, {"source": 1, "target": 3}, {"source": 1, "target": 4}]
+  , "mines" : [1, 3]
+}}

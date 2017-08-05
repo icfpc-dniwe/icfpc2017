@@ -14,7 +14,7 @@ import Data.Aeson (FromJSON, Value)
 import qualified Data.Aeson as JSON (encode, decode)
 import qualified Data.Text as T
 
-import DNIWE.Punt.Interface.Offline (RawIncomingMessage(..), RawOutgoingMessage(..), IncomingMessage(..), OutgoingMessage(..), fromRaw, toRaw, SGameState(..), Move(..), RawClaim(..), RawPass(..), RawMoves(..), RawMove(..), RawMovesScores(..), RawScore(..))
+import DNIWE.Punt.Interface.Offline (RawIncomingMessage(..), RawOutgoingMessage(..), IncomingMessage(..), OutgoingMessage(..), fromRaw, toRaw, SGameState(..), Move(..), RawClaim(..), RawPass(..), RawMoves(..), RawMove(..), RawMovesScores(..), RawScore(..), RawGameMap(..), Site(..), River(..))
 
 import Test.Hspec (Expectation, Spec, hspec, describe, it, pending, shouldSatisfy, shouldBe)
 import Test.Hspec.QuickCheck (prop)
@@ -26,6 +26,8 @@ import qualified Data.ByteString.Lazy.Char8 as BSLC8
 import Data.Map.Strict (Map, (!))
 import qualified Data.Map.Strict as Map
 
+import Data.Set (Set)
+import qualified Data.Set as Set
 
 
 samplesDir :: FilePath
@@ -58,7 +60,14 @@ spec :: Map FilePath BSL.ByteString -> Spec
 spec samples = do
   describe "RawIncomingMessage" $ do
     it "decodes Handshake" $ checkDecodeRaw (samples ! "incoming-handshake") RIHandshake { rihYou = "pidar" }
-    it "decodes Setup    " $ pending
+    it "decodes Setup    " $ checkDecodeRaw (samples ! "incoming-setup") RISetup {
+          risPunter = 4
+        , risPunters = 8
+        , risMap = RawGameMap {
+              rgmSites = [Site 1, Site 2, Site 3, Site 4]
+            , rgmRivers = [River 1 2, River 1 3, River 1 4]
+            , rgmMines = Set.fromList [1,3]}}
+
     it "decodes Gameplay " $ checkDecodeRaw (samples ! "incoming-gameplay-1") RIGameplay {
         rigMove = RawMoves [
             RawMoveClaim RawClaim {rcPunter = 1, rcSource = 4, rcTarget = 2 }
