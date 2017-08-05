@@ -5,11 +5,11 @@ import Data.Graph.Inductive.Graph
 import DNIWE.Punt.Solver.Types
 import DNIWE.Punt.Solver.Score
 
-startingGame :: StartingBoard -> Game
-startingGame board = Game { gameBoard = emap (const notTaken) $ sbBoard board
+startingGame :: StartingBoard -> Futures -> Game
+startingGame board futures = Game { gameBoard = emap (const notTaken) $ sbBoard board
                           , gameMines = sbMines board
                           , gameScoring = boardScores board
-                          , gameFutures = []
+                          , gameFutures = futures
                           }
   where notTaken = EdgeContext { taken = Nothing }
 

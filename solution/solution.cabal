@@ -48,6 +48,7 @@ executable stupid-solver
   main-is:           Main.hs
   build-depends:     base >= 4.7 && < 5.0
                    , solution
+                   , containers
                    , aeson
                    , conduit
                    , transformers

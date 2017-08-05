@@ -25,6 +25,7 @@ type Futures = Map Player [Future]
 
 data StartingBoard = StartingBoard { sbBoard :: Gr () ()
                                    , sbMines :: Mines
+                                   , sbFutures :: Futures
                                    }
                   deriving (Show)
 
