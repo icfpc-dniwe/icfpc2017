@@ -34,6 +34,7 @@ library
                    , binary
                    , cereal
                    , base64-bytestring
+                   , data-default-class
                    , fgl
                    , conduit
                    , conduit-extra
@@ -53,6 +54,7 @@ executable stupid-solver
                    , conduit
                    , transformers
                    , bytestring
+                   , data-default-class
   default-extensions: OverloadedStrings
                     , RecordWildCards
                     , LambdaCase

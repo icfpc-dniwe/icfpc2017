@@ -6,8 +6,8 @@ let
 
   f = { mkDerivation, aeson, attoparsec, base, base64-bytestring
       , binary, bytestring, cereal, conduit, conduit-extra, containers
-      , directory, fgl, filepath, hspec, QuickCheck, stdenv, text
-      , transformers, unordered-containers
+      , data-default-class, directory, fgl, filepath, hspec, QuickCheck
+      , stdenv, text, transformers, unordered-containers
       }:
       mkDerivation {
         pname = "solution";
@@ -17,10 +17,12 @@ let
         isExecutable = true;
         libraryHaskellDepends = [
           aeson attoparsec base base64-bytestring binary bytestring cereal
-          conduit conduit-extra containers fgl text unordered-containers
+          conduit conduit-extra containers data-default-class fgl text
+          unordered-containers
         ];
         executableHaskellDepends = [
-          aeson base bytestring conduit transformers
+          aeson base bytestring conduit containers data-default-class
+          transformers
         ];
         testHaskellDepends = [
           aeson base bytestring containers directory filepath hspec

@@ -1,11 +1,13 @@
 import System.Environment
 import Data.ByteString (ByteString)
 
+import Data.Maybe
 import Control.Monad
 import Control.Monad.Trans.Class (lift)
 import qualified Data.Aeson as JSON (Value)
 import Data.Aeson (FromJSON, Result(..), toJSON, fromJSON)
 import Data.Conduit (Conduit, ConduitM, await, yield)
+import Data.Default.Class
 
 import DNIWE.Punt.Interface.Online
 import DNIWE.Punt.Interface.Protocol
@@ -44,6 +46,7 @@ playGame = do
   lift . putStrLn $ "Got setup: " ++ show setup
 
   let board = boardFromMap $ srMap setup
+      Settings {..} = fromMaybe def $ srSettings setup
       myId = srPunter setup
 
       playerFromId pid
@@ -54,9 +57,11 @@ playGame = do
       applyMove' (Claim {..}) game = applyMove (playerFromId claimPunter) (claimSource, claimTarget) game
 
   let Just (ssSrc, ssDst) = stupidSolver $ startingGame board []
-  let futures = [Future ssSrc ssDst]
+  let futures = if settingsFutures then [Future ssSrc ssDst] else []
 
-  yield . toJSON $ SetupResponse { srReady = myId, srFutures = [PFuture ssSrc ssDst] }
+  yield . toJSON $ SetupResponse { srReady = myId
+                                 , srFutures = map (\(Future a b) -> PFuture a b) futures
+                                 }
 
   let loop game prevMove = awaitJSON >>= \case
         GameReq greq@(GameplayRequest {..}) -> do
@@ -79,7 +84,7 @@ playGame = do
           let finalGame = foldr applyMove' game (prevMove:stopMoves)
           lift $ forM_ stopScores $ \(Score {..}) -> do
             let player = playerFromId scorePunter
-                score' = playerScore finalGame
+                score' = playerScore finalGame { gamePlayer = player }
             putStrLn $ "Validating player " ++ show player ++ " score, server " ++ show scoreScore ++ ", us " ++ show score'
             unless (scoreScore == score') $ fail "Invalid score"
 

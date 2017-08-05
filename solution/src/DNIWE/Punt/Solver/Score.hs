@@ -23,9 +23,12 @@ boardScores (StartingBoard {..}) = M.unionsWith M.union $ map scoreOne $ S.toLis
   where scoreOne mine = M.singleton mine $ M.fromList $ map (head . unLPath) $ spTree mine weightedBoard
         weightedBoard = undir $ emap (const 1) sbBoard
 
-playerScore ::  Game -> Int
-playerScore (Game {..}) = sum (concatMap (\m -> map (defaultScore m) $ curReachable m) $ S.toList gameMines) + (sum $ map (\ftr -> futureScore ftr) $ gameFutures M.! gamePlayer)
+playerScore :: Game -> Int
+playerScore (Game {..}) = totalDefault + futureDefault
   where curReachable = mineReachable gamePlayer gameBoard
+
+        totalDefault = sum $ concatMap (\m -> map (defaultScore m) $ curReachable m) $ S.toList gameMines
+        futureDefault = sum $ map (\ftr -> futureScore ftr) $ M.findWithDefault [] gamePlayer gameFutures
 
         defaultScore mine n = defaultScoringFunction $ gameScoring M.! mine M.! n
         futureScore (Future mine target) = if target `elem` curReachable mine then ftrScore else -ftrScore

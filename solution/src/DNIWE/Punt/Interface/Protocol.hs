@@ -17,6 +17,7 @@ import Data.Aeson.Types (Options(..), SumEncoding(..), defaultOptions)
 import Data.Set (Set)
 import Data.Text (Text)
 import GHC.Generics (Generic)
+import Data.Default.Class
 
 import Data.Graph.Inductive.Graph (mkGraph)
 
@@ -131,6 +132,10 @@ data Settings = Settings {
   settingsFutures :: Bool
   } deriving (Show, Eq, Generic)
 
+instance Default Settings where
+  def = Settings { settingsFutures = False
+                 }
+
 instance FromJSON Settings where
   parseJSON = genericParseJSON jsonOptions
 
@@ -151,8 +156,8 @@ instance ToJSON SetupRequest where
 
 -- parser future
 data PFuture = PFuture {
-  futureSource :: SiteId,
-  futureTarget :: SiteId
+  pfutureSource :: SiteId,
+  pfutureTarget :: SiteId
   } deriving (Show, Eq, Generic)
 
 instance FromJSON PFuture where
