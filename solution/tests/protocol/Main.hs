@@ -9,126 +9,78 @@ import Data.Char (chr)
 import Data.Text (Text)
 import Data.Proxy (Proxy(..))
 import Data.Maybe (isJust)
-import Data.Aeson (FromJSON, Value, encode, decode, object, (.=))
+import Data.Aeson (FromJSON, Value)
+
+import qualified Data.Aeson as JSON (encode, decode)
 import qualified Data.Text as T
 
-import DNIWE.Punt.Interface.Protocol (HandshakeRequest, HandshakeResponse, SetupRequest, SetupResponse)
+import DNIWE.Punt.Interface.Offline (RawIncomingMessage(..), RawOutgoingMessage(..), IncomingMessage(..), OutgoingMessage(..), fromRaw, toRaw, GameState(..), RawMoveState(..), RawMove(..), Move(..), RawGameStateStandalone(..))
 
 import Test.Hspec (Expectation, Spec, hspec, describe, it, pending, shouldSatisfy, shouldBe)
 import Test.Hspec.QuickCheck (prop)
 import Test.QuickCheck (Gen, Arbitrary(..), sized, resize, oneof, choose, suchThat, frequency, arbitrarySizedNatural, listOf, listOf1, elements)
+import System.Directory (listDirectory)
+import System.FilePath.Posix (dropExtensions)
+import qualified Data.ByteString.Lazy as BSL
+import qualified Data.ByteString.Lazy.Char8 as BSLC8
+import Data.Map.Strict (Map, (!))
+import qualified Data.Map.Strict as Map
 
 
-inClass :: String -> Gen Char
-inClass = oneof . inClass' where
-  inClass' (x:'-':y:xs) = (choose (x, y)):(inClass' xs)
-  inClass' (x:xs)       = (return x):(inClass' xs)
-  inClass' []           = []
 
-charASCII :: Gen Char
-charASCII = inClass [chr 32, '-', chr 127]
+samplesDir :: FilePath
+samplesDir = "tests/protocol/json/"
 
-arbitraryString :: Gen Char -> Gen String
-arbitraryString c = sized $ \n -> sequence . replicate n $ c
-
-
-class (Show a) => Unwrap a where
-  unwrap :: a -> Value
-
-arbitraryPunterId :: Gen Int
-arbitraryPunterId = arbitrarySizedNatural 
-
-arbitrarySiteId :: Gen Int
-arbitrarySiteId = arbitrarySizedNatural 
-  
-
-newtype TestHandshakeRequest = TestHandshakeRequest Value deriving (Show)
-instance Unwrap TestHandshakeRequest where unwrap (TestHandshakeRequest v) = v
-instance Arbitrary TestHandshakeRequest where
-  arbitrary = do
-    name <- arbitraryString charASCII
-    return $ TestHandshakeRequest (object [ "me" .= name ])
-
-
-newtype TestHandshakeResponse = TestHandshakeResponse Value deriving (Show)
-instance Unwrap TestHandshakeResponse where unwrap (TestHandshakeResponse v) = v
-instance Arbitrary TestHandshakeResponse where
-  arbitrary = do
-    name <- arbitraryString charASCII
-    return $ TestHandshakeResponse (object [ "you" .= name ])
-
-
-newtype TestSetupRequest = TestSetupRequest Value deriving (Show)
-instance Unwrap TestSetupRequest where unwrap (TestSetupRequest v) = v
-instance Arbitrary TestSetupRequest where
-  arbitrary = do
-    punter  <- arbitraryPunterId
-    punters <- arbitraryPunterId
-
-    sites  <- listOf1 arbitrarySiteId
-    rivers <- listOf1 (liftM2 (,) (elements sites) (elements sites))
-    mines  <- resize (length sites) $ listOf1 . elements $ sites
-
-    name <- arbitraryString charASCII
-    return $ TestSetupRequest (object [
-        "punter" .= punter
-      , "punters" .= punters
-      , "map" .= object [
-           "sites" .= map (\x -> object ["id" .= x]) sites
-         , "rivers" .= map (\(a, b) -> object ["source" .= a, "target" .= b]) rivers
-         , "mines" .= mines]])
-
-
-newtype TestSetupResponse = TestSetupResponse Value deriving (Show)
-instance Unwrap TestSetupResponse where unwrap (TestSetupResponse v) = v
-instance Arbitrary TestSetupResponse where
-  arbitrary = do
-    punterId <- arbitraryPunterId
-    return $ TestSetupResponse (object [ "ready" .= punterId ])
-
-  
-propParsing
-  :: forall dataFrom dataTo. (Arbitrary dataFrom, Unwrap dataFrom, FromJSON dataTo, Show dataTo)
-  => Proxy dataFrom
-  -> Proxy dataTo
-  -> Spec
-propParsing _ _ = prop "parsing works" test where
-  test :: dataFrom -> Expectation
-  test = (`shouldSatisfy` isJust) . parse . encode . unwrap
-
-  parse :: ByteString -> Maybe dataTo
-  parse = decode
+loadJSON :: FilePath -> IO BSL.ByteString
+loadJSON fn = BSLC8.filter (not . (`elem` [' ', '\n'])) <$> BSL.readFile (samplesDir ++ fn ++ ".json")
 
 
 main :: IO ()
-main = hspec spec
+main = do
+  samples <- fmap Map.fromList . mapM (\fn -> (fn,) <$> (loadJSON fn)) . map dropExtensions =<< listDirectory samplesDir
+  hspec (spec samples)
 
-spec :: Spec
-spec = do
-  describe "HandshakeRequest" $ do
-    propParsing (Proxy :: Proxy TestHandshakeRequest) (Proxy :: Proxy HandshakeRequest)
 
-  describe "HandshakeResponse" $ do
-    propParsing (Proxy :: Proxy TestHandshakeResponse) (Proxy :: Proxy HandshakeResponse)
+checkDecodeRaw :: BSL.ByteString -> RawIncomingMessage -> Expectation
+checkDecodeRaw sample msg = JSON.decode sample `shouldBe` (Just msg)
 
-  describe "SetupRequest" $ do
-    propParsing (Proxy :: Proxy TestSetupRequest) (Proxy :: Proxy SetupRequest)
+checkEncodeRaw :: BSL.ByteString -> RawOutgoingMessage -> Expectation
+checkEncodeRaw sample msg = (JSON.encode msg) `shouldBe` sample
 
-  describe "SetupResponse" $ do
-    propParsing (Proxy :: Proxy TestSetupResponse) (Proxy :: Proxy SetupResponse)
+checkDecode :: BSL.ByteString -> IncomingMessage -> Expectation
+checkDecode sample msg = (fmap fromRaw . JSON.decode $ sample) `shouldBe` (Just msg)
 
+checkEncode :: BSL.ByteString -> OutgoingMessage -> Expectation
+checkEncode sample msg = (JSON.encode . toRaw $ msg) `shouldBe` sample
   
-  describe "Gameplay" $ do
-    prop "request parsing works" $ do
-      pending
 
-    prop "response parsing works" $ do
-      pending
+spec :: Map FilePath BSL.ByteString -> Spec
+spec samples = do
+  describe "RawIncomingMessage" $ do
+    it "decodes Handshake" $ checkDecodeRaw (samples ! "incoming-handshake") RIHandshake { rihYou = "pidar" }
+    it "decodes Setup    " $ pending
+    it "decodes Gameplay " $ pending
+    it "decodes Score    " $ pending
+    it "decodes Timeout  " $ checkDecodeRaw (samples ! "incoming-timeout") RITimeout { ritTimeout = "" }
 
-  describe "Scoring" $ do
-    prop "request parsing works" $ do
-      pending
+  describe "RawOutgoingMessage" $ do
+    it "encodes Handshake" $ checkEncodeRaw (samples ! "outgoing-handshake") ROHandshake { rohMe = "dniwe" }
+    it "encodes Setup    " $ checkEncodeRaw (samples ! "outgoing-setup") ROSetup { rosReady = 42, rosState = "" }
+    it "encodes Gameplay " $ do
 
-    prop "response parsing works" $ do
-      pending
+      checkEncodeRaw (samples ! "outgoing-gameplay-1") ROGameplay {rogMove = RawClaim { rcPunter = 1, rcSource = 4, rcTarget = 2 }, rogState = "" }
+      
+      -- checkEncodeRaw (samples ! "outgoing-gameplay-1") (ROGameplay $ RawMoveState (RawClaim { rcPunter = 1, rcSource = 2, rcTarget = 4 }, RawGameStateStandalone ""))
+      -- checkEncodeRaw (samples ! "outgoing-gameplay-2") (ROGameplay $ RawMoveState (RawPass { rpPunter = 1 }, RawGameStateStandalone "" ))
 
+  describe "IncomingMessage" $ do
+    it "decodes Handshake" $ checkDecode (samples ! "incoming-handshake") IHandshake { ihName = "pidar" }
+    it "decodes Setup    " $ pending
+    it "decodes Gameplay " $ pending
+    it "decodes Score    " $ pending
+    it "decodes Timeout  " $ checkDecode (samples ! "incoming-timeout") ITimeout { itTimeout = GameState }
+
+  describe "OutgoingMessage" $ do
+    it "encodes Handshake" $ checkEncode (samples ! "outgoing-handshake") OHandshake { ohName = "dniwe" }
+    it "encodes Setup    " $ checkEncode (samples ! "outgoing-setup") OSetup { osPunterId = 42, osState = GameState }
+    it "encodes Gameplay " $ pending

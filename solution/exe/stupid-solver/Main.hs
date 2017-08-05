@@ -11,7 +11,7 @@ import DNIWE.Punt.Interface.Online
 import DNIWE.Punt.Interface.Protocol
 import DNIWE.Punt.Solver.Types
 import DNIWE.Punt.Solver.Game
-import DNIWE.Punt.Solver.Score (boardGame, playerScore)
+import DNIWE.Punt.Solver.Score (boardScores, playerScore)
 import DNIWE.Punt.Solver.Stupid
 
 
@@ -55,9 +55,10 @@ playGame = do
 
   yield . toJSON $ SetupResponse { srReady = myId, srFutures = [] }
 
-  let loop game = awaitJSON >>= \case
+  let loop game prevMove = awaitJSON >>= \case
         GameReq greq@(GameplayRequest {..}) -> do
           lift . putStrLn $ "Got move: " ++ show greq
+          unless (prevMove `elem` movesMoves grMove) $ fail "My move was rejected"
 
           let game' = foldr applyMove' game (movesMoves grMove)
               move = case stupidSolver game' of
@@ -68,11 +69,11 @@ playGame = do
           lift . putStrLn $ "Sending move: " ++ show move
           yield $ toJSON move
 
-          loop game'
+          loop game' move
 
         StopReq stop@(StopRequest (Stop {..})) -> do
           lift . putStrLn $ "Got stop: " ++ show stop
-          let finalGame = foldr applyMove' game stopMoves
+          let finalGame = foldr applyMove' game (prevMove:stopMoves)
           lift $ forM_ stopScores $ \(Score {..}) -> do
             let player = playerFromId scorePunter
                 score' = playerScore player finalGame
@@ -81,6 +82,9 @@ playGame = do
 
   let startGame = Game { gameBoard = ibBoard board
                        , gameMines = ibMines board
-                       , gameScoring = boardGame board
+                       , gameScoring = boardScores board
+                       , gameFutures = []
+                       , defaultScoringFunction = (^ 2)
+                       , futuresScoringFunction = (^ 3)
                        }
-  loop startGame
+  loop startGame (Pass { passPunter = myId })

@@ -100,7 +100,6 @@ instance ToJSON Site where
   toJSON = genericToJSON jsonOptions
   toEncoding = genericToEncoding jsonOptions
 
-
 data River = River {
     riverSource :: SiteId
   , riverTarget :: SiteId

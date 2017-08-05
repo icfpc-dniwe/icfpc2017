@@ -4,17 +4,28 @@ let
 
   inherit (nixpkgs) pkgs;
 
-  f = { mkDerivation, aeson, base, conduit, conduit-extra, fgl
-      , hspec, QuickCheck, stdenv, text
+  f = { mkDerivation, aeson, attoparsec, base, base64-bytestring
+      , binary, bytestring, cereal, conduit, conduit-extra, containers
+      , directory, fgl, filepath, hspec, QuickCheck, stdenv, text
+      , transformers
       }:
       mkDerivation {
         pname = "solution";
         version = "0.1.0.0";
         src = ./.;
+        isLibrary = true;
+        isExecutable = true;
         libraryHaskellDepends = [
-          aeson base conduit conduit-extra fgl text
+          aeson attoparsec base base64-bytestring binary bytestring cereal
+          conduit conduit-extra containers fgl text
         ];
-        testHaskellDepends = [ base hspec QuickCheck text ];
+        executableHaskellDepends = [
+          aeson base bytestring conduit transformers
+        ];
+        testHaskellDepends = [
+          aeson base bytestring containers directory filepath hspec
+          QuickCheck text
+        ];
         license = stdenv.lib.licenses.bsd3;
       };
 

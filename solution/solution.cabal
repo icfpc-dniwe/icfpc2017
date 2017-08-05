@@ -18,6 +18,7 @@ cabal-version:       >=1.10
 library
   hs-source-dirs:    src
   exposed-modules:   DNIWE.Punt.Interface.Online
+                   , DNIWE.Punt.Interface.Offline
                    , DNIWE.Punt.Interface.Protocol
                    , DNIWE.Punt.Solver.Types
                    , DNIWE.Punt.Solver.Score
@@ -26,9 +27,13 @@ library
   build-depends:     base >=4.9 && <4.10
                    , aeson
                    , attoparsec
+                   , unordered-containers
                    , containers
                    , bytestring
                    , text
+                   , binary
+                   , cereal
+                   , base64-bytestring
                    , fgl
                    , conduit
                    , conduit-extra
@@ -63,6 +68,9 @@ test-suite protocol
                    , solution
                    , hspec
                    , text
+                   , directory
+                   , filepath
+                   , containers
                    , bytestring
                    , aeson
                    , QuickCheck
