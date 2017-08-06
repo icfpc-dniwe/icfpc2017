@@ -23,5 +23,10 @@ namespace puntvis
 			this.owner = owner;
 			this.splurge = splurge;
 		}
+
+		internal void ClearSplurge()
+		{
+			splurge = false;
+		}
 	}
 }

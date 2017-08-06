@@ -80,6 +80,9 @@ namespace puntvis
 
 		internal void Mutate(IReadOnlyCollection<Action> actions)
 		{
+			foreach (var river in rivers.Values)
+				river.ClearSplurge();
+
 			foreach (var claim in actions.OfType<ClaimAction>())
 			{
 				rivers[new riverKey
