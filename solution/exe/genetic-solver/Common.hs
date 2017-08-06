@@ -32,7 +32,7 @@ mkInitialBoard :: [(Int, Bool)] -> [(Int, Int)] -> Board
 mkInitialBoard sites rivers = Board {
     boardMap = mkGraph
       (map (\(a, _) -> (a, ())) sites)
-      (map (\(a, b) -> (a, b, ())) rivers)
+      (map (\(a, b) -> (min a b, max a b, ())) rivers)
   , boardMines = Set.fromList (map fst . filter snd $ sites)}
 
 
@@ -46,7 +46,7 @@ isPass Pass = True
 isPass _    = False
 
 fromClaim :: Move -> (Node, Node)
-fromClaim (Claim x) = x
+fromClaim (Claim (n1, n2)) = (min n1 n2, max n1 n2)
 fromClaim _         = error "not supported"
 
 
