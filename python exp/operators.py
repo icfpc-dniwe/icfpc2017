@@ -24,12 +24,19 @@ class GraphConv(Layer):
 
 class DropUnnecessary(MergeLayer):
 
-    def __init__(self, incoming_features, incoming_mask, **kwargs):
+    def __init__(self, incoming_features, incoming_mask, save_dims=True, **kwargs):
         super(DropUnnecessary, self).__init__([incoming_features, incoming_mask], **kwargs)
+        self.saveDims = save_dims
 
     def get_output_shape_for(self, input_shapes):
         return input_shapes[0]
 
     def get_output_for(self, incomings, **kwargs):
-        mask = T.eq(incomings[1], 1).nonzero()
-        return incomings[0][mask]
+        if self.saveDims:
+            mask = T.eq(incomings[1], 0).nonzero()
+            ret = incomings[0]
+            T.set_subtensor(ret[mask], 0)
+        else:
+            mask = T.eq(incomings[1], 1).nonzero()
+            ret = incomings[0][mask]
+        return ret
