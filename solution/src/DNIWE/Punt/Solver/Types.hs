@@ -50,13 +50,12 @@ data EdgeContext = EdgeContext { edgeTaken :: !(Maybe PunterId)
 instance Serialize EdgeContext where
 
 type Board = Gr () EdgeContext
-type NearestEdges = IntMap (Set Edge)
+
 data GameData = GameData { gameStarting :: !StartingBoard
                          , gameScoring :: !MineScores
                          , gameFutures :: !Futures
                          , gameMyId :: !PunterId
                          , gamePlayersN :: !Int
-                         , gameEdgesNearMines :: !NearestEdges
                          }
               deriving (Show, Eq, Generic)
 
