@@ -7,9 +7,8 @@ def GenerateGame(num_players=2, num_mines=2, graph_type='small'):
         graph = nx.house_x_graph()
     elif graph_type == 'star':
         graph = nx.generators.classic.star_graph(num_players * num_mines * 25)
-    elif graph_type == 'random':
-        graph = nx.generators.random_graphs.dense_gnm_random_graph(num_players * num_mines * 15,
-                                                                   num_players * num_mines * 100)
+    elif graph_type == 'newman':
+        graph = nx.generators.random_graphs.newman_watts_strogatz_graph(num_players * num_mines * 25, num_players * 2, 0.1)
     for node in graph:
         graph.node[node]['mine'] = 0
     # num_mines = 2
@@ -42,6 +41,9 @@ def CalcPoints(game):
                 points = graph.node[source]['points'] + 1
             if graph.node[target]['points'] is None or graph.node[target]['points'] > points:
                 graph.node[target]['points'] = points
+    for node in graph:
+        if graph.node[node]['points'] is None:
+            graph.node[node]['points'] = 0
     return None
 
 
@@ -53,6 +55,7 @@ def ClaimEdge(game, edge, progress_game=True):
     graph = game['graph']
     player = game['current_player']
     player_mines = game['player_mines'][player]
+    non_mined_claim = 1e-3
     # check if edge is already claimed
     if graph[edge[0]][edge[1]]['claimed'] >= 0:
         # Huge penalty for passing
@@ -63,10 +66,14 @@ def ClaimEdge(game, edge, progress_game=True):
             for p in range(2):
                 if not edge[p] in player_mines:
                     player_mines.append(edge[p])
-                    reward_points += 1
+                    # reward_points += 1
+                    if len(player_mines) < 2:
+                        reward_points /= non_mined_claim
+                    else:
+                        reward_points *= len(player_mines) / (len(player_mines) - 1)
         if len(player_mines) == 0:
             # Small bonus for claiming river
-            reward_points *= 1e-3
+            reward_points *= non_mined_claim
         else:
             # Get reward for claiming new node with mine already
             reward_points *= len(game['player_mines'][player])
@@ -77,7 +84,7 @@ def ClaimEdge(game, edge, progress_game=True):
         game['current_player'] += 1
         if game['current_player'] >= game['num_players']:
             game['current_player'] = 0
-    return game, reward_points * 0.1
+    return game, (reward_points - 0.9) * 1e-2
 
 
 def CalcFeatures(game):

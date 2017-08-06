@@ -24,7 +24,7 @@ def GetProbFunctions(num_features, learning_rate=1e-4, ret_updates=True):
     reward_var = T.scalar(name='Reward')
     net = BuildGraphNetwork(adjustment_var, features_var, mask_var, num_features)
     desc = lasagne.layers.get_output(net['desc'])
-    prob = msoftmax(desc)
+    prob = msoftmax(theano.gradient.grad_clip(desc, -1, 1))
     reward_grad = reward_var / prob
     params = lasagne.layers.get_all_params(net['desc'], trainable=True)
     grads = theano.grad(None, params, known_grads={prob: reward_grad})
@@ -37,17 +37,19 @@ def GetProbFunctions(num_features, learning_rate=1e-4, ret_updates=True):
         return net, action_fn
 
 
-def TrainPlayer(game, net, action_fn, update_fn, num_games=1, random_player_prob=0.5, experiment_name='test', weights_path='weights'):
-    num_turns = len(game['graph'].edges())
-    adjustment_matrix = nx.incidence_matrix(game['graph']).astype('int8').todense()
+def TrainPlayers(old_game, players, num_games=1, random_player_prob=0.5):
+    num_turns = len(old_game['graph'].edges())
+    adjustment_matrix = nx.incidence_matrix(old_game['graph']).astype('int8').todense()
     adjustment_matrix = (np.dot(adjustment_matrix.T, adjustment_matrix) > 0).astype('int8')
     for cur_game_idx in range(num_games):
         print('Game idx:', cur_game_idx)
-        current_game = deepcopy(game)
+        game = deepcopy(old_game)
         for turn_idx in range(num_turns):
+            print('Game idx:', cur_game_idx)
             print('Turn idx:', turn_idx)
-            print('Player:', current_game['current_player'])
+            print('Player:', game['current_player'])
             random_player = False
+            player = players[game['current_player']]
             if np.random.rand() < random_player_prob:
                 random_player = True
                 print('!Random player!')
@@ -55,12 +57,11 @@ def TrainPlayer(game, net, action_fn, update_fn, num_games=1, random_player_prob
                 chosen_action = np.random.choice(len(edges), size=1)[0]
                 chosen_edge = edges[chosen_action]
             else:
-                mask = CalcMask(current_game)
+                mask = CalcMask(game)
                 action_idx = np.where(mask == 1)[0]
                 if len(action_idx) >= 2:
-                    features = ProdFeatures(CalcFeatures(current_game))
-                    action_prob = action_fn(adjustment_matrix, features, mask)
-                    chosen_action = np.random.choice(action_idx, size=1, p=action_prob.squeeze())[0]
+                    features = ProdFeatures(CalcFeatures(game))
+                    chosen_action = player.getAction(adjustment_matrix, features, mask)
                     chosen_edge = game['graph'].edges()[chosen_action]
                 else:
                     break
@@ -70,5 +71,8 @@ def TrainPlayer(game, net, action_fn, update_fn, num_games=1, random_player_prob
             print('Scores:')
             [print(' :', el) for el in game['player_reward']]
             if not random_player:
-                update_fn(adjustment_matrix, features, mask, reward)
-        SaveNet(net['desc'], join(weights_path, experiment_name + '_' + str(cur_game_idx) + '.npz'))
+                player.updateParams(adjustment_matrix, features, mask, reward)
+            # input()
+        # SaveNet(net['desc'], join(weights_path, experiment_name + '_' + str(cur_game_idx) + '.npz'))
+        for player in players:
+            player.onGameEnd(cur_game_idx)
