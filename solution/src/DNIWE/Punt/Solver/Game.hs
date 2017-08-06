@@ -9,6 +9,22 @@ import Data.Graph.Inductive.PatriciaTree
 import DNIWE.Punt.Solver.Types
 import DNIWE.Punt.Solver.Score
 
+-- game moves
+
+performClaim :: PunterId -> Edge -> GameState -> GameState
+performClaim p edge state = state { stateBoard = relabelEdge (toLEdge edge $ EdgeContext { edgeTaken = Just p }) $ stateBoard state }
+
+performSplurge :: PunterId -> [Edge] -> GameState -> GameState
+performSplurge _ [] state = state
+performSplurge p (h:t) state = performSplurge p t $ performClaim p h state
+
+-- TODO: remove
+preGameMoveToFutureEdge :: GameMove -> Maybe Edge
+preGameMoveToFutureEdge (MoveClaim e) = Just e
+preGameMoveToFutureEdge (MoveSplurge es) = Just $ head es
+preGameMoveToFutureEdge (MovePass) = Nothing
+
+-- other
 
 relabelEdge :: LEdge b -> Gr a b -> Gr a b
 relabelEdge e@(a, b, _) g = insEdge e $ delEdge (a, b) g
@@ -29,9 +45,6 @@ initialState (GameData {..}) = GameState { stateBoard = emap (const initialEdge)
   where initialEdge = EdgeContext { edgeTaken = Nothing }
 
 
-applyMove :: PunterId -> Edge -> GameState -> GameState
-applyMove p edge state = state { stateBoard = relabelEdge (toLEdge edge $ EdgeContext { edgeTaken = Just p }) $ stateBoard state }
-
 freeEdges :: GameState -> [LEdge EdgeContext]
 freeEdges = filter (isNothing . edgeTaken . edgeLabel) . labEdges . stateBoard
 
@@ -47,3 +60,11 @@ maybeFuture game (a, b)
 
 nextPlayer :: GameData -> PunterId -> PunterId
 nextPlayer game n = (n + 1) `mod` gamePlayersN game
+
+edgesToRoute' :: [Edge] -> [Node] -> [Node]
+edgesToRoute' ((src,dst):t) [] = edgesToRoute' t [src,dst]
+edgesToRoute' [] res = res
+edgesToRoute' ((src,dst):t) res = edgesToRoute' t $ if src == last res then res ++ [dst] else res ++ [src]
+
+edgesToRoute :: [Edge] -> [Node]
+edgesToRoute es = edgesToRoute' es []

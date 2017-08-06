@@ -191,9 +191,11 @@ boardFromMap (BoardMap {..}) = StartingBoard { sbBoard = mkGraph nodes edges
 
 -- {"claim" : {"punter" : PunterId, "source" : SiteId, "target" : SiteId}}
 -- {"pass" : {"punter" : PunterId}}
+-- {"splurge" : {"punter" : PunterId, "route": [SiteId]}
 data Move
   = Claim { claimPunter :: PunterId, claimSource :: SiteId, claimTarget :: SiteId }
   | Pass { passPunter :: PunterId }
+  | Splurge { splurgePunter :: PunterId, splurgeRoute :: [SiteId] }
   deriving (Show, Eq, Generic)
 
 instance FromJSON Move where

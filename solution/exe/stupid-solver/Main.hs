@@ -36,6 +36,11 @@ awaitJSON = await >>= \case
     Success x -> return x
 
 
+applyMove :: Move -> GameState -> GameState
+applyMove (Pass _) state = state
+applyMove (Claim {..}) state = performClaim claimPunter (claimSource, claimTarget) state
+applyMove (Splurge {..}) state = performSplurge splurgePunter (zip (init splurgeRoute) $ drop 1 splurgeRoute) state
+
 playGame :: Conduit JSON.Value IO JSON.Value
 playGame = do
   lift . putStrLn $ "Starting session"
@@ -50,14 +55,11 @@ playGame = do
       Settings {..} = fromMaybe def $ srSettings setup
       myId = srPunter setup
 
-      applyMove' (Pass _) state = state
-      applyMove' (Claim {..}) state = applyMove claimPunter (claimSource, claimTarget) state
-
       solver game state = stupidGameTree (3 * srPunters setup) game state
 
   let preGame = gameData board [] myId (srPunters setup)
       futures
-        | settingsFutures = take 1 $ mapMaybe (maybeFuture preGame) $ solver preGame (initialState game)
+        | settingsFutures = take 1 $ mapMaybe (preGameMoveToFutureEdge >=> maybeFuture preGame) $ solver preGame (initialState game)
         | otherwise = []
       setupResp = SetupResponse { srReady = myId
                                 , srFutures = map (uncurry PFuture) futures
@@ -72,9 +74,11 @@ playGame = do
           lift . putStrLn $ "Got move: " ++ show greq
           unless (prevMove `elem` movesMoves grMove) $ fail "My move was rejected"
 
-          let newState = foldr applyMove' state (movesMoves grMove)
+          let newState = foldr applyMove state (movesMoves grMove)
               move = case solver game newState of
-                       (a, b):_ -> Claim { claimPunter = myId, claimSource = a, claimTarget = b }
+                       MoveClaim (a, b):_ -> Claim { claimPunter = myId, claimSource = a, claimTarget = b }
+                       MoveSplurge es:_ -> Splurge { splurgePunter = myId, splurgeRoute = edgesToRoute es }
+                       MovePass:_ -> Pass { passPunter = myId }
                        [] -> Pass { passPunter = myId }
 
           lift . putStrLn $ "New game state: " ++ show newState
@@ -87,7 +91,7 @@ playGame = do
 
         StopReq stop@(StopRequest (Stop {..})) -> do
           lift . putStrLn $ "Got stop: " ++ show stop
-          let finalState = foldr applyMove' state (prevMove:stopMoves)
+          let finalState = foldr applyMove state (prevMove:stopMoves)
           lift $ forM_ stopScores $ \(Score {..}) -> do
             let score' = playerScore game $ finalState { statePlayer = scorePunter }
             putStrLn $ "Validating player " ++ show scorePunter ++ " score, server " ++ show scoreScore ++ ", us " ++ show score'

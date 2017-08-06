@@ -21,7 +21,7 @@ data State = State { stData :: GameData
 
 instance Serialize State where
 
-solver :: Int -> GameData -> GameState -> [Edge]
+solver :: Int -> GameData -> GameState -> [GameMove]
 solver depth game state = map (actionEdge . fst) $ treeActions $ snd $ stupidGameTree depth game state
 
 process :: OfflineRequest State -> Maybe (OfflineResponse State)

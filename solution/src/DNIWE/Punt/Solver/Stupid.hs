@@ -28,9 +28,10 @@ gameStateHash (GameState {..}) = hash (mapMaybe filterTaken $ labEdges stateBoar
           | isJust $ edgeTaken $ edgeLabel e = Just $ toEdge e
           | otherwise = Nothing
 
-stupidGameTree :: Int -> GameData -> GameState -> [Edge]
-stupidGameTree n game state = resEdges
+stupidGameTree :: Int -> GameData -> GameState -> [GameMove]
+stupidGameTree n game state = resMoves
   where (_, _, resEdges) = stupidGameTree' n IS.empty game state
+        resMoves = map (\e -> MoveClaim e) resEdges
 
 stupidGameTree' ::  Int -> IntSet -> GameData -> GameState -> (IntSet, StupidScore, [Edge])
 stupidGameTree' 0 visitedStates game gstate = (visitedStates, finalScore, [])
@@ -50,7 +51,7 @@ stupidGameTree' n visitedStates game gstate = (newVisitedStates, curScore, curEd
           | newHash `IS.member` oldVisited = nextAction oldVisited others
           | otherwise = (newVisited, (newScore, edge):nextEdges)
 
-          where newState' = applyMove player edge gstate
+          where newState' = performClaim player edge gstate
                 newState = newState' { statePlayer = nextPlayer game $ statePlayer newState' }
                 newHash = gameStateHash newState
 
