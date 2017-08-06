@@ -7,6 +7,7 @@
 
 module DNIWE.Punt.Interface.Offline where
 
+import System.IO
 import Control.Applicative
 import GHC.Generics (Generic)
 import qualified Data.HashMap.Lazy as HM
@@ -14,10 +15,15 @@ import Data.Serialize (Serialize(..))
 import qualified Data.Serialize as Cer
 import Data.Aeson (FromJSON(..), ToJSON(..), withObject, (.:))
 import qualified Data.Aeson as JSON
+import Data.Conduit
+import qualified Data.Conduit.List as CL
+import Data.Conduit.Binary
+import Data.Conduit.Attoparsec
 
 import qualified Data.ByteString.Base64 as Base64
 import qualified Data.Text.Encoding as TE
 
+import DNIWE.Punt.Interface.Types
 import DNIWE.Punt.Interface.Protocol
 
 
@@ -56,13 +62,6 @@ instance (Serialize state) => ToJSON (OfflineRequest state) where
   toJSON (GameOReq game) = toJSON game
 
   
-data OfflineResponse state = SetupORes (StatefulMessage state SetupResponse)
-                           | GameORes (StatefulMessage state GameplayResponse)
-                           deriving (Show, Eq)
-
-instance (Serialize state) => FromJSON (OfflineResponse state) where
-  parseJSON p = (SetupORes <$> parseJSON p) <|> (GameORes <$> parseJSON p)
-
-instance (Serialize state) => ToJSON (OfflineResponse state) where
-  toJSON (SetupORes setup) = toJSON setup
-  toJSON (GameORes game) = toJSON game
+runOfflineClient :: Conduit JSON.Value IO JSON.Value -> IO ()
+runOfflineClient conduit = do
+  sourceHandle stdin $$ conduitParser messageParser =$= CL.map snd =$= conduit =$= CL.map encodeMessage =$= sinkHandle stdout

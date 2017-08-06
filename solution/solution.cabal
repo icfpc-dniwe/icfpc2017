@@ -20,6 +20,8 @@ library
   exposed-modules:   DNIWE.Punt.Interface.Online
                    , DNIWE.Punt.Interface.Offline
                    , DNIWE.Punt.Interface.Protocol
+                   , DNIWE.Punt.Interface.Types
+                   , DNIWE.Punt.Interface.Process
                    , DNIWE.Punt.Solver.Types
                    , DNIWE.Punt.Solver.Score
                    , DNIWE.Punt.Solver.Stupid
@@ -45,6 +47,7 @@ library
                     , RecordWildCards
                     , ViewPatterns
                     , DeriveGeneric
+                    , LambdaCase
   default-language:  Haskell2010
   ghc-options:       -Wall -fprof-auto
 
@@ -53,13 +56,11 @@ executable stupid-solver
   main-is:           Main.hs
   build-depends:     base >= 4.7 && < 5.0
                    , solution
-                   , containers
                    , aeson
                    , conduit
                    , transformers
                    , bytestring
                    , data-default-class
-                   , deepseq
   default-extensions: OverloadedStrings
                     , RecordWildCards
                     , LambdaCase
@@ -74,14 +75,11 @@ executable offline-solver
   main-is:           Main.hs
   build-depends:     base >= 4.7 && < 5.0
                    , solution
-                   , containers
                    , aeson
-                   , conduit
-                   , transformers
-                   , bytestring
-                   , data-default-class
                    , cereal
                    , fgl
+                   , conduit
+                   , data-default-class
   default-extensions: OverloadedStrings
                     , RecordWildCards
                     , LambdaCase
