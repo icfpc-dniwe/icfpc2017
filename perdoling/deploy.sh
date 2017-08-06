@@ -10,7 +10,7 @@ HOME="/root"
 SSH_PATH="$HOME/.ssh"
 
 PREBUILT_SRV="lamduct"
-PREBUILT_SRV_URL="https://t.co/mmjapiGAsy"
+PREBUILT_SRV_URL="icfpcontest2017.github.io/static/lamduct-0.3"
 
 INSTALL="apt-get install -y"
 PACKAGES=(git vim nano cabal-install zlibc zlib1g-dev m4 opam wget)
