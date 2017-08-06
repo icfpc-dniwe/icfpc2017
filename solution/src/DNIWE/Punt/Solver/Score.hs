@@ -37,9 +37,3 @@ playerScore (GameData {..}) (GameState {..}) = totalDefault + futureDefault
 mineReachable :: PunterId -> Board -> Node -> [Node]
 mineReachable player graph start = DFS.xdfsWith (map snd . filterTaken . lneighbors') node' [start] graph
   where filterTaken = filter ((== Just player) . edgeTaken . fst)
-<<<<<<< HEAD
-
-determineEdgesNearMines :: Int -> StartingBoard -> NearestEdges
-determineEdgesNearMines depth (StartingBoard {..}) = map (\m -> ) $ S.toArray sbMines
-=======
->>>>>>> parent of 62a0a5b... unchulhu
