@@ -8,14 +8,16 @@
 
 module Main where
 
+import Control.Monad (liftM2)
 import Data.Proxy (Proxy(..))
 import qualified Data.Foldable as Foldable (toList)
 import Data.Sequence (Seq, ViewL(..), viewl, (|>), dropWhileL)
 import qualified Data.Sequence as Seq
+import Data.Graph.Inductive.Graph (size)
 
 import DNIWE.Punt.Solver.Types (PunterId)
 
-import Common (PlayerWrapper(..), Move(..), Player(..), mkInitialBoard)
+import Common (Board(..), PlayerWrapper(..), Move(..), Player(..), mkInitialBoard)
 import Player.Watcher (Watcher, getScores)
 import Player.Dummy   (Dummy)
 
@@ -49,6 +51,19 @@ simulate r watcher players = simulate' r (watcher, Seq.fromList players, Seq.emp
       (x :< xs) -> (x, xs)
 
 
+runGame :: (Player p) => Board -> Proxy p -> Int -> IO [(PunterId, Int, String)]
+runGame board p1 playersNum = do
+
+  let r = size $ boardMap board
+  w  <- initialState 0 playersNum [] board (Proxy :: Proxy Watcher)
+  ps <- liftM2 (:)
+          (PlayerWrapper <$> initialState 1 playersNum [] board p1)
+          (mapM (\i -> PlayerWrapper <$> initialState i playersNum [] board (Proxy :: Proxy Dummy)) [2..playersNum])
+
+  (w', ps') <- simulate r w ps
+  return $ getScores w' ps' 
+
+  
 main :: IO ()
 main = do
 
@@ -56,14 +71,4 @@ main = do
         [(1, True), (2, False), (3, False), (4, False)]
         [(1,2), (1,3), (1,4)]
 
-  let r = 4
-  let playersNum = 3
-
-  ps <- mapM (\i -> PlayerWrapper <$> initialState i playersNum [] board (Proxy :: Proxy Dummy)) [1..playersNum]
-  w  <- initialState 0 playersNum [] board (Proxy :: Proxy Watcher)
-
-  putStrLn . show $ w
-  (w', ps') <- simulate r w ps
-
-  putStrLn . show $ w'
-  putStrLn . unlines . map show $ getScores w' ps'
+  runGame board (Proxy :: Proxy Dummy) 3 >>= putStrLn . unlines . map show
