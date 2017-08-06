@@ -7,12 +7,12 @@ from train import GetProbFunctions
 
 def StartPlayer(num_features, learn=True, learning_rate=1e-4, history_level=1,
                 history_coeff=0.9, experiment_name='deploy_test'):
-    net, a, u = GetProbFunctions(num_features, learning_rate=learning_rate)
+    net, a, u = GetProbFunctions(num_features, learning_rate=learning_rate, ret_updates=learn)
     return NetworkPlayer()
 
-#query {"action": "feature_count"}
+#query {"action": "settings"}
 #answer {"feature_count": int}
-def ReadFeatureCount(json_string):
+def ReadSettings(json_string):
     pass
 
 #query {"action": "incidence_matrix"}

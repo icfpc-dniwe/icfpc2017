@@ -26,13 +26,13 @@ def main(t):
         net_player = lambda x: NetworkPlayer(net, a, u, 1, 0.5, save_iter=5, experiment_name='newman_most_test' + str(x))
         players = [net_player(_) for _ in range(num_players)]
     elif t == '2':
-        num_players = 3
-        num_games = 100
-        rpb = 0.05
-        game = GenerateGame(num_players, 4, 'newman')
+        num_players = 4
+        num_games = 1000
+        rpb = 0.0
+        game = GenerateGame(num_players, 10, 'newman')
         # TrainPlayer(game, net, a, u, num_games=100, random_player_prob=0.1, experiment_name='newman_test')
-        net_player = lambda x, l: NetworkPlayer(net, a, u, l, 0.8, save_iter=50, experiment_name='newman_test' + str(x))
-        players = [net_player(0, 1), net_player(1, 10), RandomPlayer()]
+        net_player = lambda x, l: NetworkPlayer(net, a, u, l, 0.6, save_iter=50, experiment_name='newman_test' + str(x))
+        players = [net_player(0, 2), net_player(1, 8), net_player(1, 16), RandomPlayer()]
     elif t == '3':
         num_players = 4
         num_games = 100
@@ -45,7 +45,7 @@ def main(t):
         print('Unknown argument:', t, type(t))
         return
     # players = [net_player] * num_players
-    TrainPlayers(game, players, num_games, rpb)
+    TrainPlayers(game, players, num_games, rpb, echo_idx=10)
 
 
 def prep():
@@ -73,6 +73,6 @@ def prep():
 
 
 if __name__ == '__main__':
-    # t = sys.argv[1]
-    # main(t)
-    prep()
+    t = sys.argv[1]
+    main(t)
+    # prep()
