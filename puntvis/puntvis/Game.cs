@@ -81,6 +81,20 @@ namespace puntvis
 					t = claim.target
 				}].Claim(claim.punter);
 			}
+			foreach (var splurge in actions.OfType<SplurgeAction>())
+			{
+				var prev = splurge.route.First();
+				foreach (var next in splurge.route.Skip(1))
+				{
+					rivers[new riverKey
+					{
+						s = prev,
+						t = next
+					}].Claim(splurge.punter, splurge: true);
+					prev = next;
+				}
+			}
+
 			stateNumber++;
 		}
 	}
