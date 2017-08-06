@@ -1,10 +1,6 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE RecordWildCards #-}
 
--- roadmap
--- TODO: get scores from watcher
--- TODO: player with features
---
 
 module Main where
 
@@ -18,8 +14,9 @@ import Data.Graph.Inductive.Graph (size)
 import DNIWE.Punt.Solver.Types (PunterId)
 
 import Common (Board(..), PlayerWrapper(..), Move(..), Player(..), mkInitialBoard)
-import Player.Watcher (Watcher, getScores)
-import Player.Dummy   (Dummy)
+import Player.Watcher      (Watcher, getScores)
+import Player.Dummy        (Dummy)
+import Player.FeatureBased (FeatureBased)
 
 
 
@@ -71,4 +68,4 @@ main = do
         [(1, True), (2, False), (3, False), (4, False)]
         [(1,2), (1,3), (1,4)]
 
-  runGame board (Proxy :: Proxy Dummy) 3 >>= putStrLn . unlines . map show
+  runGame board (Proxy :: Proxy FeatureBased) 3 >>= putStrLn . unlines . map show
