@@ -1,103 +1,28 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE RecordWildCards #-}
 
--- roadmap
--- TODO: remove bool from boardMap
--- TODO: watcher should know who took an edge
--- TODO: get scores from watcher
--- TODO: player with features
---
 
 module Main where
 
+import Control.Monad (liftM2)
 import Data.Proxy (Proxy(..))
 import qualified Data.Foldable as Foldable (toList)
-import Data.Sequence (Seq(..), ViewL(..), viewl, (|>), dropWhileL)
+import Data.Sequence (Seq, ViewL(..), viewl, (|>), dropWhileL)
 import qualified Data.Sequence as Seq
-import Data.Default (Default, def)
-import Data.Graph.Inductive.Graph (LEdge, Edge, Node, mkGraph, gmap, emap, toEdge, toLEdge, labEdges, edgeLabel)
-import Data.Graph.Inductive.PatriciaTree (Gr)
+import Data.Graph.Inductive.Graph (size)
 
-import DNIWE.Punt.Solver.Types (StartingBoard(..), Future(..), PunterId, MineScores)
-import DNIWE.Punt.Solver.Game ()
-import DNIWE.Punt.Solver.Score (boardScores)
-import GHC.Generics (Generic)
+import DNIWE.Punt.Solver.Types (PunterId)
 
-import Data.Vector.Unboxed (Vector, (//))
-import qualified Data.Vector.Unboxed as Vector
-
-import Data.Set (Set)
-import qualified Data.Set as Set
-
-import DNIWE.Punt.Solver.Game (relabelEdge)
-
-import Common (
-  Board(..), mkInitialBoard,
-  Move(..), isPass, fromClaim, relabelEdge',
-  Player(..),
-  emap')
-
-
-
--- | Player that only monitors game state.
-data Watcher = Watcher {watcherBoard :: Board}
-  deriving (Show, Eq, Generic)
-
-instance Player Watcher where
-
-  initialState playerId playersNum board@(Board {..}) _ = do
-    return $ Watcher { watcherBoard = board }
-
-  updateState moves state = do
-    let boardMap'
-          = foldl (\board edge -> relabelEdge' edge (const False) board) (boardMap . watcherBoard $ state)
-          . map (fromClaim . snd)
-          . filter (not . isPass . snd)
-          $ moves
-    return state { watcherBoard = (watcherBoard state) { boardMap = boardMap' }}
-
-  playerId _ = error "Watcher doesn't not participate in a game"
-  makeMove _ = error "Watcher doesn't not participate in a game"
-
-
-
--- | Player that takes first free edge every turn.
-data DummyPlayer = DummyPlayer {
-    dpBoard    :: Board
-  , dpPlayerId :: PunterId}
-  deriving (Show, Eq, Generic)
-
-
-instance Player DummyPlayer where
-
-  initialState playerId playersNum board@(Board {..}) _ = do
-    return $ DummyPlayer { dpBoard = board, dpPlayerId = playerId }
-
-  playerId DummyPlayer {..} = dpPlayerId
-
-  updateState moves state = do
-    let boardMap'
-          = foldl (\board edge -> relabelEdge' edge (const False) board) (boardMap . dpBoard $ state)
-          . map (fromClaim . snd)
-          . filter (not . isPass . snd)
-          $ moves
-    return state { dpBoard = (dpBoard state) { boardMap = boardMap' }}
-
-
-  makeMove state = do
-    let edges = filter (edgeLabel) . labEdges . boardMap . dpBoard $ state
-    if null edges
-       then return (state, Pass)
-       else do
-         let (n1, n2, _) = head edges
-         let boardMap' = relabelEdge' (n1, n2) (const False) . boardMap . dpBoard $ state
-         return (state { dpBoard = (dpBoard state) { boardMap = boardMap' }}, Claim (n1, n2))
+import Common (Board(..), PlayerWrapper(..), Move(..), Player(..), mkInitialBoard)
+import Player.Watcher      (Watcher, getScores)
+import Player.Dummy        (Dummy)
+import Player.FeatureBased (FeatureBased)
 
 
 
 simulate :: (Player p) => Int -> Watcher -> [p] -> IO (Watcher, [p])
-simulate r w ps = simulate' r (w, Seq.fromList ps, Seq.empty)
-  >>= \(w, ps, _) -> return (w, Foldable.toList ps) where
+simulate r watcher players = simulate' r (watcher, Seq.fromList players, Seq.empty)
+  >>= \(watcher', players', _) -> return (watcher', Foldable.toList players') where
     simulate'
       :: (Player p)
       => Int
@@ -123,7 +48,17 @@ simulate r w ps = simulate' r (w, Seq.fromList ps, Seq.empty)
       (x :< xs) -> (x, xs)
 
 
+runGame :: (Player p) => Board -> Proxy p -> Int -> IO [(PunterId, Int, String)]
+runGame board p1 playersNum = do
 
+  let r = size $ boardMap board
+  w  <- initialState 0 playersNum [] board (Proxy :: Proxy Watcher)
+  ps <- liftM2 (:)
+          (PlayerWrapper <$> initialState 1 playersNum [] board p1)
+          (mapM (\i -> PlayerWrapper <$> initialState i playersNum [] board (Proxy :: Proxy Dummy)) [2..playersNum])
+
+  (w', ps') <- simulate r w ps
+  return $ getScores w' ps'
 
 
 main :: IO ()
@@ -133,14 +68,4 @@ main = do
         [(1, True), (2, False), (3, False), (4, False)]
         [(1,2), (1,3), (1,4)]
 
-  let r = 4
-  let playersNum = 3
-
-  ps <- mapM (\i -> initialState i playersNum board (Proxy :: Proxy DummyPlayer)) [1..playersNum]
-  w  <- initialState 0 playersNum board (Proxy :: Proxy Watcher)
-
-  putStrLn . show $ w
-
-  (w', ps') <- simulate r w ps
-
-  putStrLn . show $ w'
+  runGame board (Proxy :: Proxy FeatureBased) 3 >>= putStrLn . unlines . map show

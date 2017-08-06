@@ -1,28 +1,19 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE ExistentialQuantification #-}
 
 module Common where
 
+import Control.Arrow (first)
 import Data.Proxy (Proxy(..))
-import qualified Data.Foldable as Foldable (toList)
-import Data.Sequence (Seq(..), ViewL(..), viewl, (|>))
-import qualified Data.Sequence as Seq
-import Data.Default (Default, def)
-import Data.Graph.Inductive.Graph (LEdge, Edge, Node, mkGraph, gmap, emap, toEdge, toLEdge, labEdges, edgeLabel)
+import Data.Graph.Inductive.Graph (Node, mkGraph, gmap)
 import Data.Graph.Inductive.PatriciaTree (Gr)
 
-import DNIWE.Punt.Solver.Types (StartingBoard(..), Future(..), PunterId, MineScores)
-import DNIWE.Punt.Solver.Game ()
-import DNIWE.Punt.Solver.Score (boardScores)
+import DNIWE.Punt.Solver.Types (Future(..), PunterId, Mines)
 import GHC.Generics (Generic)
 
-import Data.Vector.Unboxed (Vector, (//))
-import qualified Data.Vector.Unboxed as Vector
-
-import Data.Set (Set)
 import qualified Data.Set as Set
 
-import DNIWE.Punt.Solver.Game (relabelEdge)
 
 emap' :: ((Node, Node) -> e1 -> e2) -> Gr v e1 -> Gr v e2
 emap' f = gmap f' where
@@ -30,11 +21,23 @@ emap' f = gmap f' where
     fi (b, n0) = (f (n0, n1) b, n0)
     fo (b, n2) = (f (n1, n2) b, n2)
 
------
+nmap' :: (Node -> v1 -> v2) -> Gr v1 e -> Gr v2 e
+nmap' f = gmap f' where
+  f' (is, n, nc, os) = (is, n, f n nc, os)
+
+
+relabelEdge' :: (Node, Node) -> (e -> e) -> Gr v e -> Gr v e
+relabelEdge' (n1, n2) f = emap' f' where
+  f' (n1', n2') e = if (n1 == n1' && n2 == n2') then (f e) else e
+
+relabelNode' :: Node -> (v -> v) -> Gr v e -> Gr v e
+relabelNode' n f = nmap' f' where
+  f' n' c = if n == n' then f c else c
+
 
 data Board = Board {
-    boardMap   :: Gr () Bool {- Bool: is free? -}
-  , boardMines :: Set Node}
+    boardMap   :: Gr () ()
+  , boardMines :: Mines}
   deriving (Show, Eq, Generic)
 
 
@@ -42,96 +45,9 @@ mkInitialBoard :: [(Int, Bool)] -> [(Int, Int)] -> Board
 mkInitialBoard sites rivers = Board {
     boardMap = mkGraph
       (map (\(a, _) -> (a, ())) sites)
-      (map (\(a, b) -> (a, b, True)) rivers)
+      (map (\(a, b) -> (min a b, max a b, ())) rivers)
   , boardMines = Set.fromList (map fst . filter snd $ sites)}
 
------
-
-
--- data GameState = GameState {
---      gsBoard      :: Board
---    , gsPlayersNum :: Int}
---   deriving (Show, Eq, Generic)
-
-{-
-{-
-mkGameData :: StartingBoard -> [Future] -> PunterId -> Int -> GameData
-mkGameData startingBoard futures playerId playersNum = GameData {
-    gdStartingBoard = startingBoard
-  , gdScoring       = boardScores startingBoard
-  , gdFutures       = futures
-  , gdPlayerId      = playerId
-  , gdPlayersNum    = playersNum}
--}
-
-
-
-
-data PlayerState = PlayerState {
-    psScoring  :: MineScores
-  , psFutures  :: [Future]
-  , psPlayerId :: PunterId}
-  deriving (Show, Eq, Generic)
-
-
-
-data EdgeContext = EdgeContext {
-    ecFree     :: Bool
-  , ecFeatures :: Vector Double
-  , ecResult   :: Double}
-  deriving (Show, Eq, Ord, Generic)
-
-instance Default EdgeContext where
-  def = EdgeContext {
-      ecFree = True
-    , ecFeatures = Vector.replicate featuresNum 0
-    , ecResult = 0.0}
-
-
-updateFeatures
-  :: (Int, Int)
-  -> EdgeContext
-  -> EdgeContext
-updateFeatures (n1, n2) e = e { ecFeatures = ecFeatures' } where
-  ecFeatures' = (ecFeatures e) // [
-      (0, if ecFree e then 1.0 else 0.0)
-    , (1, 0.5 * (fromIntegral $ n1 + n2))]
-
-
-featuresNum :: Int
-featuresNum = 16
-
-
--- data GameState = GameState {gsBoard  :: Gr () EdgeContext}
---   deriving (Show, Eq, Generic)
---
--- mkInitialState :: GameData -> GameState
--- mkInitialState (GameData {..}) = GameState {
---   gsBoard  = emap' updateFeatures . emap (const def) . sbBoard $ gdStartingBoard } where
-
-
-applyMove :: PunterId -> LEdge EdgeContext -> GameState -> GameState
-applyMove p (n1, n2, e) state = state {
-  gsBoard = relabelEdge (n1, n2, e {ecFree = False}) $ gsBoard state }
-
-
-
--- playerScore :: GameData -> GameState -> Int
--- playerScore (GameData {..}) (GameState {..}) = totalDefault + futureDefault where
---   curReachable = mineReachable statePlayer stateBoard
---         totalDefault = sum $ concatMap (\m -> map (defaultScore m) $ curReachable m) $ S.toList $ sbMines gameStarting
---         futureDefault = sum $ map (\ftr -> futureScore ftr) $ M.findWithDefault [] statePlayer gameFutures
---
---         defaultScore mine n = defaultScoringFunction $ gameScoring M.! mine M.! n
---         futureScore (Future mine target) = if target `elem` curReachable mine then ftrScore else -ftrScore
---           where ftrScore = futuresScoringFunction $ gameScoring M.! mine M.! target
---
--- mineReachable :: PunterId -> Board -> Node -> [Node]
--- mineReachable player graph start = xdfsWith (map snd . filterTaken . lneighbors') node' [start] graph
---   where filterTaken = filter ((== Just player) . edgeTaken . fst)
-
-
--}
 
 data Move
   = Claim (Node, Node)
@@ -143,17 +59,27 @@ isPass Pass = True
 isPass _    = False
 
 fromClaim :: Move -> (Node, Node)
-fromClaim (Claim x) = x
+fromClaim (Claim (n1, n2)) = (min n1 n2, max n1 n2)
 fromClaim _         = error "not supported"
 
 
-relabelEdge' :: (Node, Node) -> (e -> e) -> Gr v e -> Gr v e
-relabelEdge' (n1, n2) f = emap' f' where
-  f' (n1', n2') e = if (n1 == n1' && n2 == n2') then (f e) else e
 
 
 class Player p where
-  initialState :: PunterId -> Int -> Board -> Proxy p -> IO p
-  updateState  :: [(PunterId, Move)] -> p -> IO p
-  playerId     :: p -> PunterId
-  makeMove     :: p -> IO (p, Move)
+  initialState  :: PunterId -> Int -> [Future] -> Board -> Proxy p -> IO p
+  updateState   :: [(PunterId, Move)] -> p -> IO p
+  playerId      :: p -> PunterId
+  playerFutures :: p -> [Future]
+  makeMove      :: p -> IO (p, Move)
+  feedback      :: p -> String
+  feedback _   = ""
+
+data PlayerWrapper = forall p. (Player p) => PlayerWrapper p
+
+instance Player PlayerWrapper where
+  initialState                     = error "Must be concrete player type"
+  updateState ms (PlayerWrapper p) = PlayerWrapper <$> (updateState ms p)
+  playerId       (PlayerWrapper p) = playerId p
+  playerFutures  (PlayerWrapper p) = playerFutures p
+  makeMove       (PlayerWrapper p) = (first PlayerWrapper) <$> (makeMove p)
+  feedback       (PlayerWrapper p) = feedback p
