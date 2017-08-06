@@ -46,20 +46,20 @@ stupidGameTree' n visitedStates game gstate = (newVisitedStates, curScore, curEd
                      (score, _):_ -> score
                      _ -> StupidScore { stupidScores = M.singleton player (playerScore game gstate) }
 
-        nextAction oldVisited [] = (oldVisited, [])
-        nextAction oldVisited ((toEdge -> edge):others)
-          | newHash `IS.member` oldVisited = nextAction oldVisited others
-          | otherwise = (newVisited, (newScore, edge):nextEdges)
+stupidNextAction oldVisited [] = (oldVisited, [])
+stupidNextAction oldVisited ((toEdge -> edge):others)
+  | newHash `IS.member` oldVisited = nextAction oldVisited others
+  | otherwise = (newVisited, (newScore, edge):nextEdges)
 
-          where newState' = performClaim player edge gstate
-                newState = newState' { statePlayer = nextPlayer game $ statePlayer newState' }
-                newHash = gameStateHash newState
+  where newState' = performClaim player edge gstate
+        newState = newState' { statePlayer = nextPlayer game $ statePlayer newState' }
+        newHash = gameStateHash newState
 
-                (curVisited, score, _) = stupidGameTree' (n - 1) oldVisited game newState
-                curVisited' = IS.insert newHash curVisited
+        (curVisited, score, _) = stupidGameTree' (n - 1) oldVisited game newState
+        curVisited' = IS.insert newHash curVisited
 
-                (newVisited, nextEdges) = nextAction curVisited' others
+        (newVisited, nextEdges) = nextAction curVisited' others
 
-                newScore
-                  | player `M.member` stupidScores score = score
-                  | otherwise = score { stupidScores = M.insert player (playerScore game $ newState' { statePlayer = player }) $ stupidScores score }
+        newScore
+          | player `M.member` stupidScores score = score
+          | otherwise = score { stupidScores = M.insert player (playerScore game $ newState' { statePlayer = player }) $ stupidScores score }
