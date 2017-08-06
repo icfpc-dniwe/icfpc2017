@@ -179,9 +179,11 @@ instance ToJSON SetupResponse where
 
 -- {"claim" : {"punter" : PunterId, "source" : SiteId, "target" : SiteId}}
 -- {"pass" : {"punter" : PunterId}}
+-- {"splurge" : {"punter" : PunterId, "route": [SiteId]}
 data Move
   = Claim { claimPunter :: PunterId, claimSource :: SiteId, claimTarget :: SiteId }
   | Pass { passPunter :: PunterId }
+  | Splurge { splurgePunter :: PunterId, splurgeRoute :: [SiteId] }
   deriving (Show, Eq, Generic)
 
 instance FromJSON Move where
@@ -220,18 +222,18 @@ type GameplayResponse = Move
 
 -- Scoring
 
-data Score = Score { scorePunter :: PunterId, scoreScore :: Int }
+data ScoreResponse = ScoreResponse { scorePunter :: PunterId, scoreScore :: Score }
     deriving (Show, Eq, Generic)
 
-instance FromJSON Score where
+instance FromJSON ScoreResponse where
   parseJSON = genericParseJSON jsonOptions
 
-instance ToJSON Score where
+instance ToJSON ScoreResponse where
   toJSON = genericToJSON jsonOptions
   toEncoding = genericToEncoding jsonOptions
 
 
-data Stop = Stop { stopMoves :: [Move], stopScores :: [Score] }
+data Stop = Stop { stopMoves :: [Move], stopScores :: [ScoreResponse] }
     deriving (Show, Eq, Generic)
 
 instance FromJSON Stop where

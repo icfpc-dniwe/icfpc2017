@@ -42,6 +42,7 @@ playGame = do
       Settings {..} = fromMaybe def $ srSettings setup
       (game, setupResp) = initializeState setup
 
+  lift . putStrLn $ "Game data: " ++ show game
   lift . putStrLn $ "Sending setup response: " ++ show setupResp
   yieldJSON setupResp
 
@@ -64,7 +65,7 @@ playGame = do
         StopReq stop@(StopRequest (Stop {..})) -> do
           lift . putStrLn $ "Got stop: " ++ show stop
           let finalState = foldr applyMove state (prevMove:stopMoves)
-          lift $ forM_ stopScores $ \(Score {..}) -> do
+          lift $ forM_ stopScores $ \(ScoreResponse {..}) -> do
             let score' = playerScore game $ finalState { statePlayer = scorePunter }
             putStrLn $ "Validating player " ++ show scorePunter ++ " score, server " ++ show scoreScore ++ ", us " ++ show score'
             unless (scoreScore == score' || (scorePunter /= myId && settingsFutures)) $ fail "Invalid score"

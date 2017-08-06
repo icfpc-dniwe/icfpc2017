@@ -13,6 +13,8 @@ import Control.DeepSeq (NFData(..))
 type SiteId = Int
 type PunterId = Int
 
+type Score = Int
+
 instance (Serialize a, Serialize b) => Serialize (Gr a b) where
   put g = put (labNodes g) >> put (labEdges g)
   get = mkGraph <$> get <*> get
@@ -78,7 +80,7 @@ data GameTree a = GameTree { treeState :: !GameState
                            }
                 deriving (Show, Eq, Generic)
 
-data GameMove = MoveClaim Edge |
-                MovePass |
-                MoveSplurge [Edge]
+data GameMove = MoveClaim Edge
+              | MovePass
+              | MoveSplurge [Edge]
               deriving (Show, Eq)

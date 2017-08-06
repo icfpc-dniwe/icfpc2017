@@ -1,14 +1,21 @@
 module DNIWE.Punt.Interface.Process where
 
 import Data.Maybe
+import Control.Monad
 import Control.DeepSeq
 import Data.Default.Class
+import Data.Graph.Inductive.Graph
 
 import DNIWE.Punt.Interface.Types
 import DNIWE.Punt.Interface.Protocol
 import DNIWE.Punt.Solver.Types
 import DNIWE.Punt.Solver.Game
 import DNIWE.Punt.Solver.Stupid
+
+gameMoveToFutureEdge :: GameMove -> Maybe Edge
+gameMoveToFutureEdge (MoveClaim e) = Just e
+gameMoveToFutureEdge (MoveSplurge es) = Just $ head es
+gameMoveToFutureEdge (MovePass) = Nothing
 
 initializeState :: SetupRequest -> (GameData, SetupResponse)
 initializeState setup = (game, game `deepseq` setupResp)
@@ -18,7 +25,7 @@ initializeState setup = (game, game `deepseq` setupResp)
 
         preGame = gameData board [] myId (srPunters setup)
         futures
-          | settingsFutures = take 1 $ mapMaybe (maybeFuture preGame) $ stupidGameTree (3 * srPunters setup)preGame (initialState game)
+          | settingsFutures = take 1 $ mapMaybe (gameMoveToFutureEdge >=> maybeFuture preGame) $ stupidGameTree (3 * srPunters setup)preGame (initialState game)
           | otherwise = []
         setupResp = SetupResponse { srReady = myId
                                   , srFutures = map (uncurry PFuture) futures
