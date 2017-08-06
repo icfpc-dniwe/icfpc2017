@@ -14,6 +14,7 @@ import DNIWE.Punt.Solver.Stupid
 
 gameMoveToFutureEdge :: GameMove -> Maybe Edge
 gameMoveToFutureEdge (MoveClaim e) = Just e
+gameMoveToFutureEdge (MoveOption e) = Just e
 gameMoveToFutureEdge (MoveSplurge es) = Just $ head es
 gameMoveToFutureEdge (MovePass) = Nothing
 

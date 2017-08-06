@@ -14,10 +14,19 @@ import qualified Data.Graph.Inductive.Query.DFS as DFS
 import DNIWE.Punt.Solver.Types
 import DNIWE.Punt.Solver.Score
 
+-- heuristics
+defaultLookupDepth :: Int
+defaultLookupDepth = 3
+
 -- game moves
 
 performClaim :: PunterId -> Edge -> GameState -> GameState
 performClaim p edge state = state { stateTaken = M.insert edge p $ stateTaken state }
+
+performOption :: PunterId -> Edge -> GameState -> GameState
+performOption p edge state@(GameState {..}) =
+    if stateRemainingOptions >= 0 then state { stateTaken = M.insert edge p stateTaken, stateRemainingOptions = stateRemainingOptions - 1 }
+                                  else error "no more options available!"
 
 performSplurge :: PunterId -> [Edge] -> GameState -> GameState
 performSplurge _ [] state = state
@@ -26,6 +35,7 @@ performSplurge p (h:t) state = performSplurge p t $ performClaim p h state
 -- TODO: remove
 preGameMoveToFutureEdge :: GameMove -> Maybe Edge
 preGameMoveToFutureEdge (MoveClaim e) = Just e
+preGameMoveToFutureEdge (MoveOption e) = Just e
 preGameMoveToFutureEdge (MoveSplurge es) = Just $ head es
 preGameMoveToFutureEdge (MovePass) = Nothing
 
@@ -41,11 +51,13 @@ gameData board futures playerId totalPlayers =
            , gameFutures = IM.singleton playerId futures
            , gameMyId = playerId
            , gamePlayersN = totalPlayers
+           , gameEdgesNearMines = edgesNearMines defaultLookupDepth board
            }
 
 initialState :: GameData -> GameState
 initialState (GameData {..}) = GameState { stateTaken = M.empty
                                          , statePlayer = gameMyId
+                                         , stateRemainingOptions = let (StartingBoard {..}) = gameStarting in length sbMines
                                          }
 
 

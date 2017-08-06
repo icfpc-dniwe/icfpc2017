@@ -1,6 +1,7 @@
 module DNIWE.Punt.Solver.Score
   ( boardScores
   , playerScore
+  , edgesNearMines
   ) where
 
 import qualified Data.Set as S
@@ -38,3 +39,19 @@ mineReachable :: Board -> GameState -> Node -> [Node]
 mineReachable board (GameState {..}) start = DFS.xdfsWith filterContext node' [start] board
   where filterTaken = filter (\edge -> maybe False (== statePlayer) $ M.lookup edge stateTaken)
         filterContext ctx = map snd (filterTaken $ map (node' ctx, ) $ pre' ctx) ++ map fst (filterTaken $ map (, node' ctx) $ suc' ctx)
+
+edgesNearMines :: Int -> StartingBoard -> NearestEdges
+edgesNearMines depth (StartingBoard {..}) = foldr1 (IM.union) $ map (\m -> IM.singleton m $ S.fromList $ edgesNearMine m) $ S.toList sbMines
+  where nodesNearMine m = map (\(n, _) -> n) $ filter (\(_, d) -> d <= depth) $ BFS.level m sbBoard
+        edgesNearMine m = foldr1 (++) $ map (\n -> filter (\(s,t) -> s == n || t == n) $ edges sbBoard) $ nodesNearMine m
+
+--edgesNearPunters :: Int -> GameData -> GameState -> NearestEdges
+--depth (GameData {..}) (GameState {..}) = foldr1 (M.union) $ map (\p -> M.singleton p $ S.fromList $ edgesNearPunter p) [0..gamePlayersN]
+--  where claimedEdges p = filter (\(EdgeContext {..}) -> case edgeTaken of
+--  	                                                      Just pId -> pId == p
+--                                                          Nothing -> False
+--                                ) edges stateBoard
+----        claimedNodes = S.fromList $ map (\(s, t) -> S.fromList [s, t])
+--  	    nodesNearNode node = map (\(n, _) -> n) $ filter (\((EdgeContext {..}), d) -> d <= depth && isNothing edgeTaken) $ level node stateBoard
+--        edgesNearNode node = foldr1 (++) $ map (\n -> filter (\(s,t) -> s == n || t == n) $ edges stateBoard) $ nodesNearNode node
+--        edgesNearPunter p = map (\e -> ) map (\n -> edgesNearNode n) 

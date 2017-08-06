@@ -125,11 +125,15 @@ instance ToJSON BoardMap where
   toEncoding = genericToEncoding jsonOptions
 
 data Settings = Settings {
-  settingsFutures :: Bool
+    settingsFutures :: Bool
+  , settingsSplurges :: Bool
+  , settingsOptions :: Bool
   } deriving (Show, Eq, Generic)
 
 instance Default Settings where
   def = Settings { settingsFutures = False
+                 , settingsSplurges = False
+                 , settingsOptions = False
                  }
 
 instance FromJSON Settings where
@@ -180,10 +184,12 @@ instance ToJSON SetupResponse where
 -- {"claim" : {"punter" : PunterId, "source" : SiteId, "target" : SiteId}}
 -- {"pass" : {"punter" : PunterId}}
 -- {"splurge" : {"punter" : PunterId, "route": [SiteId]}
+-- {"option" : {"punter" : PunterId, "source" : SiteId, "target" : SiteId}}
 data Move
   = Claim { claimPunter :: PunterId, claimSource :: SiteId, claimTarget :: SiteId }
   | Pass { passPunter :: PunterId }
   | Splurge { splurgePunter :: PunterId, splurgeRoute :: [SiteId] }
+  | Option { optionPunter :: PunterId, optionSource :: SiteId, optionTarget :: SiteId }
   deriving (Show, Eq, Generic)
 
 instance FromJSON Move where

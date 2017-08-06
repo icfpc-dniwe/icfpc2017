@@ -57,11 +57,13 @@ data EdgeContext = EdgeContext { edgeTaken :: !(Maybe PunterId)
 
 instance Serialize EdgeContext where
 
+type NearestEdges = IntMap (Set Edge)
 data GameData = GameData { gameStarting :: !StartingBoard
                          , gameScoring :: !MineScores
                          , gameFutures :: !Futures
                          , gameMyId :: !PunterId
                          , gamePlayersN :: !Int
+                         , gameEdgesNearMines :: !NearestEdges
                          }
               deriving (Show, Eq, Generic)
 
@@ -70,6 +72,7 @@ instance NFData GameData where
 
 data GameState = GameState { stateTaken :: !(Map Edge PunterId)
                            , statePlayer :: !PunterId
+                           , stateRemainingOptions :: !Int
                            }
                deriving (Show, Eq, Generic)
 
@@ -87,6 +90,7 @@ data GameTree a = GameTree { treeState :: !GameState
                 deriving (Show, Eq, Generic)
 
 data GameMove = MoveClaim Edge
+              | MoveOption Edge
               | MovePass
               | MoveSplurge [Edge]
               deriving (Show, Eq)

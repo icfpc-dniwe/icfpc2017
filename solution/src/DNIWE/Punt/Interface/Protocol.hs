@@ -48,6 +48,7 @@ yieldJSON = yield . toJSON
 
 makeMove :: PunterId -> Maybe GameMove -> Move
 makeMove myId (Just (MoveClaim (a, b))) = Claim { claimPunter = myId, claimSource = a, claimTarget = b }
+makeMove myId (Just (MoveOption (a, b))) = Option { optionPunter = myId, optionSource = a, optionTarget = b }
 makeMove myId (Just (MoveSplurge es)) = Splurge { splurgePunter = myId, splurgeRoute = edgesToRoute es }
 makeMove myId (Just MovePass) = Pass { passPunter = myId }
 makeMove myId Nothing = Pass { passPunter = myId }
@@ -63,3 +64,4 @@ applyMove :: GameData -> Move -> GameState -> GameState
 applyMove _ (Pass _) state = state
 applyMove game (Claim {..}) state = performClaim claimPunter (sanitizeEdge (sbBoard $ gameStarting game) (claimSource, claimTarget)) state
 applyMove game (Splurge {..}) state = performSplurge splurgePunter (map (sanitizeEdge (sbBoard $ gameStarting game)) $ zip (init splurgeRoute) $ drop 1 splurgeRoute) state
+applyMove game (Option {..}) state = performOption optionPunter (sanitizeEdge (sbBoard $ gameStarting game) (optionSource, optionTarget)) state
