@@ -76,3 +76,8 @@ data GameTree a = GameTree { treeState :: !GameState
                            , treeActions :: [(Action a, GameTree a)]
                            }
                 deriving (Show, Eq, Generic)
+
+data GameMove = MoveClaim Edge |
+                MovePass |
+                MoveSplurge [Edge]
+              deriving (Show, Eq)
