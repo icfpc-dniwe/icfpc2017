@@ -10,27 +10,28 @@ def StartPlayer(num_features, learn=True, learning_rate=1e-4, history_level=1,
     net, a, u = GetProbFunctions(num_features, learning_rate=learning_rate)
     return NetworkPlayer()
 
+#query {"action": "feature_count"}
+#answer {"feature_count": int}
+def ReadFeatureCount(json_string):
+    pass
 
+#query {"action": "incidence_matrix"}
+#answer {"edges": [{"src": int, "dst": int, "features": double4, "valid": bool}]}
 def ReadIncidenceMartix(json_string):
     # Read incidence matrix from json
+    # Read features from json (every row has N features for edge) -- "features"
+    # Read binary mask for filtering desired edges (=1 if interested in edge, i.e. valid claim) - "valid"
     pass
 
 
-def ReadFeatureMatrix(json_string):
-    # Read features from json (every row has N features for edge)
-    pass
-
-
-def ReadMask(json_string):
-    # Read binary mask for filtering desired edges (=1 if interested in edge, i.e. valid claim)
-    pass
-
-
+#query {"action": "get_reward", "edge": {"src": int, "dst": int}}
+#answer {"edge": {"src": int, "dst": int}, "reward": double}}
 def ReadReward(json_string):
     # Read scalar reward for choosing action
     pass
 
-
+#query {"action": "put_probabilities", "values": [{"src": int, "dst": int, "probability": double}]}
+#answer None
 def WriteProbabilities(json_string):
     # Write probabilities for each interested edge
     pass
