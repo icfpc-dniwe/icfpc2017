@@ -7,6 +7,7 @@ import qualified Data.Set as S
 import qualified Data.IntMap.Strict as M
 import Data.Graph.Inductive.Graph
 import Data.Graph.Inductive.Basic
+import Data.Graph.Inductive.Query.BFS
 import Data.Graph.Inductive.Query.DFS
 import Data.Graph.Inductive.Query.SP
 
@@ -37,3 +38,6 @@ playerScore (GameData {..}) (GameState {..}) = totalDefault + futureDefault
 mineReachable :: PunterId -> Board -> Node -> [Node]
 mineReachable player graph start = xdfsWith (map snd . filterTaken . lneighbors') node' [start] graph
   where filterTaken = filter ((== Just player) . edgeTaken . fst)
+
+determineEdgesNearMines :: Int -> StartingBoard -> NearestEdges
+determineEdgesNearMines depth (StartingBoard {..}) = map (\m -> ) $ S.toArray sbMines
