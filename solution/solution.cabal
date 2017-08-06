@@ -103,6 +103,7 @@ executable genetic-solver
                    , conduit
                    , transformers
                    , bytestring
+                   , unordered-containers
                    , vector
                    , data-default-class
                    , cereal

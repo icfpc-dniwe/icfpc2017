@@ -21,6 +21,19 @@ emap' f = gmap f' where
     fi (b, n0) = (f (n0, n1) b, n0)
     fo (b, n2) = (f (n1, n2) b, n2)
 
+nmap' :: (Node -> v1 -> v2) -> Gr v1 e -> Gr v2 e
+nmap' f = gmap f' where
+  f' (is, n, nc, os) = (is, n, f n nc, os)
+
+
+relabelEdge' :: (Node, Node) -> (e -> e) -> Gr v e -> Gr v e
+relabelEdge' (n1, n2) f = emap' f' where
+  f' (n1', n2') e = if (n1 == n1' && n2 == n2') then (f e) else e
+
+relabelNode' :: Node -> (v -> v) -> Gr v e -> Gr v e
+relabelNode' n f = nmap' f' where
+  f' n' c = if n == n' then f c else c
+
 
 data Board = Board {
     boardMap   :: Gr () ()
@@ -50,9 +63,6 @@ fromClaim (Claim (n1, n2)) = (min n1 n2, max n1 n2)
 fromClaim _         = error "not supported"
 
 
-relabelEdge' :: (Node, Node) -> (e -> e) -> Gr v e -> Gr v e
-relabelEdge' (n1, n2) f = emap' f' where
-  f' (n1', n2') e = if (n1 == n1' && n2 == n2') then (f e) else e
 
 
 class Player p where
