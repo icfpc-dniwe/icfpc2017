@@ -13,7 +13,6 @@ import sys
 from build_net import BuildGraphNetwork
 from operators import msoftmax
 from network_tools import ClaimEdge, CalcFeatures, CalcMask
-from net_tools import SaveNet
 from common import ProdFeatures
 
 
@@ -37,22 +36,24 @@ def GetProbFunctions(num_features, learning_rate=1e-4, ret_updates=True):
         return net, action_fn
 
 
-def TrainPlayers(old_game, players, num_games=1, random_player_prob=0.5):
+def TrainPlayers(old_game, players, num_games=1, random_player_prob=0.5, echo_idx=1):
     num_turns = len(old_game['graph'].edges())
     adjustment_matrix = nx.incidence_matrix(old_game['graph']).astype('int8').todense()
     adjustment_matrix = (np.dot(adjustment_matrix.T, adjustment_matrix) > 0).astype('int8')
+    final_winners = [0] * num_games
     for cur_game_idx in range(num_games):
-        print('Game idx:', cur_game_idx)
+        if (cur_game_idx + 1) % echo_idx == 0:
+            print('Game idx:', cur_game_idx)
         game = deepcopy(old_game)
         for turn_idx in range(num_turns):
-            print('Game idx:', cur_game_idx)
-            print('Turn idx:', turn_idx)
-            print('Player:', game['current_player'])
+            # print('Game idx:', cur_game_idx)
+            # print('Turn idx:', turn_idx)
+            # print('Player:', game['current_player'])
             random_player = False
             player = players[game['current_player']]
             if np.random.rand() < random_player_prob:
                 random_player = True
-                print('!Random player!')
+                # print('!Random player!')
                 edges = game['graph'].edges()
                 chosen_action = np.random.choice(len(edges), size=1)[0]
                 chosen_edge = edges[chosen_action]
@@ -61,18 +62,21 @@ def TrainPlayers(old_game, players, num_games=1, random_player_prob=0.5):
                 action_idx = np.where(mask == 1)[0]
                 if len(action_idx) >= 2:
                     features = ProdFeatures(CalcFeatures(game))
+                    player.getAction(adjustment_matrix, features, mask)
                     chosen_action = player.getAction(adjustment_matrix, features, mask)
                     chosen_edge = game['graph'].edges()[chosen_action]
                 else:
                     break
-            print('Chosen action:', chosen_edge)
+            # print('Chosen action:', chosen_edge)
             current_game, reward = ClaimEdge(game, chosen_edge)
-            print('Reward:', reward)
-            print('Scores:')
-            [print(' :', el) for el in game['player_reward']]
+            # print('Reward:', reward)
+            # print('Scores:')
+            # [print(' :', el) for el in game['player_reward']]
             if not random_player:
                 player.updateParams(adjustment_matrix, features, mask, reward)
             # input()
         # SaveNet(net['desc'], join(weights_path, experiment_name + '_' + str(cur_game_idx) + '.npz'))
         for player in players:
             player.onGameEnd(cur_game_idx)
+        final_winners[cur_game_idx] = np.argmax(game['player_reward'])
+    return final_winners
