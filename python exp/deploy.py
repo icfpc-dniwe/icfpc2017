@@ -11,8 +11,8 @@ def StartPlayer(num_features, learn=True, learning_rate=1e-4, history_level=1,
     return NetworkPlayer()
 
 
-#query {"action": "feature_count"}
-#answer {"action": "feature_count", "feature_count": int}
+#query {"action": "settings"}
+#answer {"action": "settings", "feature_count": int}
 def ReadSettings(json_string):
     pass
 
