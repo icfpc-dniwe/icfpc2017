@@ -51,8 +51,8 @@ playGame = do
           lift . putStrLn $ "Got move: " ++ show greq
           unless (prevMove `elem` movesMoves grMove) $ fail "My move was rejected"
 
-          let newState = foldr applyMove state (movesMoves grMove)
-              move = makeMove myId $ listToMaybe $ stupidGameTree (3 * srPunters setup) game newState
+          let newState = foldr (applyMove game) state (movesMoves grMove)
+              move = makeMove myId $ listToMaybe $ stupidGameTree (6) game newState
 
           lift . putStrLn $ "New game state: " ++ show newState
           lift . putStrLn $ ""
@@ -64,7 +64,7 @@ playGame = do
 
         StopReq stop@(StopRequest (Stop {..})) -> do
           lift . putStrLn $ "Got stop: " ++ show stop
-          let finalState = foldr applyMove state (prevMove:stopMoves)
+          let finalState = foldr (applyMove game) state (prevMove:stopMoves)
           lift $ forM_ stopScores $ \(ScoreResponse {..}) -> do
             let score' = playerScore game $ finalState { statePlayer = scorePunter }
             putStrLn $ "Validating player " ++ show scorePunter ++ " score, server " ++ show scoreScore ++ ", us " ++ show score'

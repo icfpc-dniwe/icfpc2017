@@ -1,10 +1,15 @@
 module DNIWE.Punt.Solver.Game where
 
+import Control.Monad
 import Data.Maybe
-import qualified Data.IntMap.Strict as M
+import Data.Tree (Tree)
+import qualified Data.IntMap.Strict as IM
+import qualified Data.Map.Strict as M
 import qualified Data.Set as S
 import Data.Graph.Inductive.Graph
 import Data.Graph.Inductive.PatriciaTree
+import Control.Monad.Random.Class
+import qualified Data.Graph.Inductive.Query.DFS as DFS
 
 import DNIWE.Punt.Solver.Types
 import DNIWE.Punt.Solver.Score
@@ -12,7 +17,7 @@ import DNIWE.Punt.Solver.Score
 -- game moves
 
 performClaim :: PunterId -> Edge -> GameState -> GameState
-performClaim p edge state = state { stateBoard = relabelEdge (toLEdge edge $ EdgeContext { edgeTaken = Just p }) $ stateBoard state }
+performClaim p edge state = state { stateTaken = M.insert edge p $ stateTaken state }
 
 performSplurge :: PunterId -> [Edge] -> GameState -> GameState
 performSplurge _ [] state = state
@@ -33,20 +38,19 @@ gameData :: StartingBoard -> [Future] -> PunterId -> Int -> GameData
 gameData board futures playerId totalPlayers =
   GameData { gameStarting = board
            , gameScoring = boardScores board
-           , gameFutures = M.singleton playerId futures
+           , gameFutures = IM.singleton playerId futures
            , gameMyId = playerId
            , gamePlayersN = totalPlayers
            }
 
 initialState :: GameData -> GameState
-initialState (GameData {..}) = GameState { stateBoard = emap (const initialEdge) $ sbBoard gameStarting
+initialState (GameData {..}) = GameState { stateTaken = M.empty
                                          , statePlayer = gameMyId
                                          }
-  where initialEdge = EdgeContext { edgeTaken = Nothing }
 
 
-freeEdges :: GameState -> [LEdge EdgeContext]
-freeEdges = filter (isNothing . edgeTaken . edgeLabel) . labEdges . stateBoard
+freeEdges :: GameData -> GameState -> [Edge]
+freeEdges game state = filter (not . (`M.member` stateTaken state)) $ map toEdge $ labEdges $ sbBoard $ gameStarting game
 
 maybeFuture :: GameData -> Edge -> Maybe Edge
 maybeFuture game (a, b)
@@ -68,3 +72,17 @@ edgesToRoute' ((src,dst):t) res = edgesToRoute' t $ if src == last res then res 
 
 edgesToRoute :: [Edge] -> [Node]
 edgesToRoute es = edgesToRoute' es []
+
+randomVersatile :: MonadRandom m => Float -> [Node] -> Gr a b -> m [Tree Node]
+randomVersatile percentage starts graph = do
+  let maybeDrop x = do
+        chance <- getRandom
+        if chance <= percentage
+          then return $ Just x
+          else return Nothing
+  dropped <- liftM (S.fromList . catMaybes) $ mapM (maybeDrop . toEdge) $ labEdges graph
+
+  let filterDropped = filter (not . (`S.member` dropped))
+      filterContext ctx = map snd (filterDropped $ map (node' ctx, ) $ pre' ctx) ++ map fst (filterDropped $ map (, node' ctx) $ suc' ctx)
+
+  return $ DFS.xdffWith filterContext node' starts graph

@@ -42,12 +42,14 @@ library
                    , conduit
                    , conduit-extra
                    , deepseq
+                   , MonadRandom
   default-extensions: FlexibleContexts
                     , OverloadedStrings
                     , RecordWildCards
                     , ViewPatterns
                     , DeriveGeneric
                     , LambdaCase
+                    , TupleSections
   default-language:  Haskell2010
   ghc-options:       -Wall -fprof-auto
 

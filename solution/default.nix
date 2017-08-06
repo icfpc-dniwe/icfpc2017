@@ -1,8 +1,8 @@
 { mkDerivation, aeson, attoparsec, base, base64-bytestring, binary
 , bytestring, cereal, conduit, conduit-extra, containers
 , data-default, data-default-class, deepseq, directory, fgl
-, filepath, hashable, hspec, QuickCheck, stdenv, text, transformers
-, unordered-containers, vector
+, filepath, hashable, hspec, MonadRandom, QuickCheck, stdenv, text
+, transformers, unordered-containers, vector
 }:
 mkDerivation {
   pname = "solution";
@@ -13,7 +13,7 @@ mkDerivation {
   libraryHaskellDepends = [
     aeson attoparsec base base64-bytestring binary bytestring cereal
     conduit conduit-extra containers data-default-class deepseq fgl
-    hashable text unordered-containers
+    hashable MonadRandom text unordered-containers
   ];
   executableHaskellDepends = [
     aeson base bytestring cereal conduit containers data-default

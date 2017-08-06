@@ -44,7 +44,7 @@ playGame = do
 
     GameOReq (StatefulMessage {..}) -> do
       let myId = stMyId smState
-          newState = foldr applyMove (stState smState) (movesMoves $ grMove smMessage)
+          newState = foldr (applyMove (stData smState)) (stState smState) (movesMoves $ grMove smMessage)
 
           move = makeMove myId $ listToMaybe $ stupidGameTree (stDepth smState) (stData smState) newState
       

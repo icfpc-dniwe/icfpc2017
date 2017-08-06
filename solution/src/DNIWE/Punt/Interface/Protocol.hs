@@ -4,7 +4,7 @@ module DNIWE.Punt.Interface.Protocol where
 import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Lazy as BL
 import Data.Monoid
-import Data.Graph.Inductive.Graph (mkGraph)
+import Data.Graph.Inductive.Graph
 import qualified Data.Attoparsec.ByteString.Char8 as P
 import Data.Aeson (ToJSON, FromJSON, toJSON, fromJSON, Result(..))
 import qualified Data.Aeson as JSON
@@ -17,17 +17,17 @@ import DNIWE.Punt.Solver.Game
 
 
 boardFromMap :: BoardMap -> StartingBoard
-boardFromMap (BoardMap {..}) = StartingBoard { sbBoard = mkGraph nodes edges
+boardFromMap (BoardMap {..}) = StartingBoard { sbBoard = mkGraph sbNodes sbEdges
                                              , sbMines = mapMines
                                              }
-  where nodes = map (\(Site {..}) -> (siteId, ())) mapSites
-        edges = map (\(River {..}) -> (riverSource, riverTarget, ())) mapRivers
+  where sbNodes = map (\(Site {..}) -> (siteId, ())) mapSites
+        sbEdges = map (\(River {..}) -> (riverSource, riverTarget, ())) mapRivers
 
 messageParser :: P.Parser JSON.Value
 messageParser = do
-  size <- P.decimal
+  msize <- P.decimal
   _ <- P.char ':'
-  msg <- P.take size
+  msg <- P.take msize
   case P.parseOnly JSONP.json msg of
     Left e -> fail e
     Right r -> return r
@@ -52,7 +52,14 @@ makeMove myId (Just (MoveSplurge es)) = Splurge { splurgePunter = myId, splurgeR
 makeMove myId (Just MovePass) = Pass { passPunter = myId }
 makeMove myId Nothing = Pass { passPunter = myId }
 
-applyMove :: Move -> GameState -> GameState
-applyMove (Pass _) state = state
-applyMove (Claim {..}) state = performClaim claimPunter (claimSource, claimTarget) state
-applyMove (Splurge {..}) state = performSplurge splurgePunter (zip (init splurgeRoute) $ drop 1 splurgeRoute) state
+sanitizeEdge :: Graph gr => gr a b -> Edge -> Edge
+sanitizeEdge gr e@(a, b)
+  | hasEdge gr e = e
+  | hasEdge gr re = re
+  | otherwise = error "sanitizeEdge: edge does not exist"
+  where re = (b, a)
+
+applyMove :: GameData -> Move -> GameState -> GameState
+applyMove _ (Pass _) state = state
+applyMove game (Claim {..}) state = performClaim claimPunter (sanitizeEdge (sbBoard $ gameStarting game) (claimSource, claimTarget)) state
+applyMove game (Splurge {..}) state = performSplurge splurgePunter (map (sanitizeEdge (sbBoard $ gameStarting game)) $ zip (init splurgeRoute) $ drop 1 splurgeRoute) state
