@@ -2,9 +2,6 @@ import theano
 from theano import tensor as T
 
 import lasagne
-# CuDNN imports
-# from lasagne.layers.dnn import BatchNormDNNLayer as BatchNormLayer
-# from lasagne.layers.dnn import batch_norm_dnn as batch_norm
 # Standart layers
 from lasagne.layers import DenseLayer, InputLayer, ConcatLayer, NonlinearityLayer, BatchNormLayer, batch_norm
 # Nonlinearity functions

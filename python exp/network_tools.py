@@ -8,7 +8,7 @@ def GenerateGame(num_players=2, num_mines=2, graph_type='small'):
     elif graph_type == 'star':
         graph = nx.generators.classic.star_graph(num_players * num_mines * 25)
     elif graph_type == 'newman':
-        graph = nx.generators.random_graphs.newman_watts_strogatz_graph(num_players * num_mines * 25, num_players * 2, 0.1)
+        graph = nx.generators.random_graphs.newman_watts_strogatz_graph(num_players * num_mines * 5, num_players * 2, 0.15)
     for node in graph:
         graph.node[node]['mine'] = 0
     print('Graph:', len(graph.nodes()), len(graph.edges()))

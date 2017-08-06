@@ -65,10 +65,10 @@ def prep():
     print('_small1:', Counter(winners))
     game = GenerateGame(3, 5, 'newman')
     LoadNet(net2['desc'], 'weights/test_small1_999.npz')
-    players = [net_player('_newman2', 10, 0.8, net, a, u, save_iter=5),
+    players = [net_player('_newman2', 10, 0.8, net, a, u, save_iter=10),
                net_player('15', 0, 0, net2, a2, None, save_iter=10000),
                RandomPlayer()]
-    winners = TrainPlayers(game, players, 100, 0.01, echo_idx=2)
+    winners = TrainPlayers(game, players, 100, 0.01, echo_idx=5)
     print('_newman2:', Counter(winners))
 
 
