@@ -61,9 +61,9 @@ runGame board p1 playersNum = do
           (mapM (\i -> PlayerWrapper <$> initialState i playersNum [] board (Proxy :: Proxy Dummy)) [2..playersNum])
 
   (w', ps') <- simulate r w ps
-  return $ getScores w' ps' 
+  return $ getScores w' ps'
 
-  
+
 main :: IO ()
 main = do
 
