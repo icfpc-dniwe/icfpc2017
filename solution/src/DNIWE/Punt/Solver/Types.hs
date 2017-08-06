@@ -1,6 +1,8 @@
+{-# OPTIONS_GHC -fno-warn-orphans #-}
+
 module DNIWE.Punt.Solver.Types where
 
-import Data.Map.Strict (Map)
+import Data.IntMap.Strict (IntMap)
 import Data.Set (Set)
 import Data.Graph.Inductive.Graph
 import Data.Graph.Inductive.PatriciaTree
@@ -15,21 +17,21 @@ instance (Serialize a, Serialize b) => Serialize (Gr a b) where
   put g = put (labNodes g) >> put (labEdges g)
   get = mkGraph <$> get <*> get
 
-type NodeScores = Map Node Int
+type NodeScores = IntMap Int
 
 type Mine = Node
-type MineScores = Map Mine NodeScores
+type MineScores = IntMap NodeScores
 type Mines = Set Node
 
-data Future = Future { futureMine :: Mine
-                     , futureTarget :: Node
+data Future = Future { futureMine :: !Mine
+                     , futureTarget :: !Node
                      }
             deriving (Show, Eq, Generic)
 
 instance Serialize Future where
 instance NFData Future where
 
-type Futures = Map PunterId [Future]
+type Futures = IntMap [Future]
 
 data StartingBoard = StartingBoard { sbBoard :: !(Gr () ())
                                    , sbMines :: !Mines

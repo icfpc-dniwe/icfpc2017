@@ -29,6 +29,7 @@ library
                    , attoparsec
                    , unordered-containers
                    , containers
+                   , hashable
                    , bytestring
                    , text
                    , binary
