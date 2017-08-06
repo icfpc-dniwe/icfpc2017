@@ -1,7 +1,7 @@
 module DNIWE.Punt.Solver.Game where
 
 import Data.Maybe
-import qualified Data.Map as M
+import qualified Data.IntMap.Strict as M
 import qualified Data.Set as S
 import Data.Graph.Inductive.Graph
 import Data.Graph.Inductive.PatriciaTree
@@ -11,8 +11,7 @@ import DNIWE.Punt.Solver.Score
 
 
 relabelEdge :: LEdge b -> Gr a b -> Gr a b
-relabelEdge e = insEdge e . delEdge (toEdge e)
-
+relabelEdge e@(a, b, _) g = insEdge e $ delEdge (a, b) g
 
 gameData :: StartingBoard -> [Future] -> PunterId -> Int -> GameData
 gameData board futures playerId totalPlayers =

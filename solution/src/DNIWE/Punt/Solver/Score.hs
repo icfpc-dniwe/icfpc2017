@@ -4,7 +4,7 @@ module DNIWE.Punt.Solver.Score
   ) where
 
 import qualified Data.Set as S
-import qualified Data.Map.Strict as M
+import qualified Data.IntMap.Strict as M
 import Data.Graph.Inductive.Graph
 import Data.Graph.Inductive.Basic
 import Data.Graph.Inductive.Query.DFS
