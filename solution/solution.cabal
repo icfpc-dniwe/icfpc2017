@@ -26,6 +26,7 @@ library
                    , DNIWE.Punt.Solver.Score
                    , DNIWE.Punt.Solver.Stupid
                    , DNIWE.Punt.Solver.Game
+                   , DNIWE.Punt.Solver.Utility
   build-depends:     base >=4.9 && <4.10
                    , aeson
                    , attoparsec

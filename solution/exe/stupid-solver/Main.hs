@@ -65,8 +65,10 @@ playGame = do
         StopReq stop@(StopRequest (Stop {..})) -> do
           lift . putStrLn $ "Got stop: " ++ show stop
           let finalState = foldr (applyMove game) state (prevMove:stopMoves)
+          lift . putStrLn $ "Final game state: " ++ show finalState
           lift $ forM_ stopScores $ \(ScoreResponse {..}) -> do
             let score' = playerScore game $ finalState { statePlayer = scorePunter }
+
             putStrLn $ "Validating player " ++ show scorePunter ++ " score, server " ++ show scoreScore ++ ", us " ++ show score'
             unless (scoreScore == score' || (scorePunter /= myId && settingsFutures)) $ fail "Invalid score"
 
