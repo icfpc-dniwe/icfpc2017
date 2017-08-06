@@ -92,6 +92,25 @@ executable offline-solver
   ghc-options:       -Wall
 
 
+executable genetic-solver
+  hs-source-dirs:    exe/genetic-solver
+  main-is:           Main.hs
+  build-depends:     base >= 4.7 && < 5.0
+                   , solution
+                   , containers
+                   , data-default
+                   , aeson
+                   , conduit
+                   , transformers
+                   , bytestring
+                   , vector
+                   , data-default-class
+                   , cereal
+                   , fgl
+  default-language:  Haskell2010
+  ghc-options:       -Wall
+
+
 test-suite protocol
   type:              exitcode-stdio-1.0
   hs-source-dirs:    tests/protocol
