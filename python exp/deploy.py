@@ -10,8 +10,10 @@ def StartPlayer(num_features, learn=True, learning_rate=1e-4, history_level=1,
     net, a, u = GetProbFunctions(num_features, learning_rate=learning_rate, ret_updates=learn)
     return NetworkPlayer()
 
+
 #query {"action": "feature_count"}
 #answer {"action": "feature_count", "feature_count": int}
+def ReadSettings(json_string):
     pass
 
 #query {"action": "incidence_matrix"}
