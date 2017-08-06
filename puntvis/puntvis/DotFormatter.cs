@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -11,6 +11,7 @@ namespace puntvis
 			int punters,
 			IReadOnlyCollection<Site> sites,
 			IReadOnlyCollection<River> rivers,
+			IReadOnlyCollection<Futures> futures,
 			string filename)
 		{
 			var r = new Random();
@@ -28,7 +29,7 @@ namespace puntvis
 			{
 				writer.WriteLine("graph G {");
 				foreach (var site in sites)
-					writer.WriteLine(formatSite(site));
+					writer.WriteLine(formatSite(site, futures));
 
 				var maxPunterLength = punters.ToString().Length;
 				foreach (var river in rivers)
@@ -41,12 +42,22 @@ namespace puntvis
 		private static string getRGBA(byte red, byte green, byte blue)
 			=> $"#{red.ToString("X")}{green.ToString("X")}{blue.ToString("X")}FF";
 
-		private static string formatSite(Site site)
+		private static string formatSite(Site site, IReadOnlyCollection<Futures> futures)
 		{
+			var label = site.Id.ToString();
+			var sf = futures
+				.FirstOrDefault(x => x.source == site.Id);
+			var tf = futures
+				.FirstOrDefault(x => x.target == site.Id);
+			if (sf != null)
+				label += "↑" + sf.number.ToString();
+			if (tf != null)
+				label += "↓" + tf.number.ToString();
+
 			var args = new Dictionary<string, string>
 			{
 				["fontcolor"] = site.isMine ? "#FF0000FF" : "#0000FFFF",
-				["label"] = site.Id.ToString()
+				["label"] = label
 			};
 			if (site.x != null)
 				args["pos"] = $"{site.x},{site.y}!";

@@ -49,6 +49,7 @@
   <ItemGroup>
     <Compile Include="ClaimAction.cs" />
     <Compile Include="DotFormatter.cs" />
+    <Compile Include="Futures.cs" />
     <Compile Include="Game.cs" />
     <Compile Include="Palette.cs" />
     <Compile Include="Program.cs" />

@@ -32,7 +32,7 @@ namespace puntvis
 			Directory.CreateDirectory(destination);
 
 			var states = File.ReadAllLines(log)
-				.Where(x => x.StartsWith(ServerPrefix))
+				.Where(x => x.StartsWith(ServerPrefix) || x.StartsWith(ClientPrefix) && x.Contains("futures"))
 				.Skip(1) // you: alice
 				.Select(x => x.Substring(ServerPrefix.Length + 1))
 				.ToList();
@@ -54,15 +54,40 @@ namespace puntvis
 				.ToDictionary(
 					x => x.id,
 					x => new Site(x.id, x.x, x.y, isMine: mines.Contains(x.id)));
+			
+			IEnumerable<Futures> futures = null;
+			var readyJson = states.Skip(1).First();
+			if (readyJson.Contains("futures"))
+			{
+				var raw = new
+				{
+					ready = 0,
+					futures = new[]
+					{
+						new
+						{
+							source = 0,
+							target = 0
+						}
+					}
+				};
+				raw = JsonConvert.DeserializeAnonymousType(readyJson, raw);
+				if (raw.futures != null)
+				{
+					futures = raw.futures.Select((f, i) => new Futures(f.source, f.target, i));
+				}
+			}
+			futures = futures ?? new Futures[] { };
 			var game = new Game(
 				rawGame.punter,
 				rawGame.punters,
 				sites.Values,
 				rawGame.map.rivers
-					.Select(x => new River(sites[x.source], sites[x.target])));
+					.Select(x => new River(sites[x.source], sites[x.target])),
+				futures);
 			game.Draw(destination);
 
-			foreach (var jsonDiff in states.Skip(1))
+			foreach (var jsonDiff in states.Skip(2))
 			{
 				var rawDiff = new
 				{

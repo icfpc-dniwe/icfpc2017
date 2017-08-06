@@ -40,11 +40,17 @@ namespace puntvis
 		private Dictionary<int, Site> sites;
 
 		public int stateNumber = 0;
+		private IReadOnlyCollection<Futures> futures;
 
-		public Game(int punter, int punters, IEnumerable<Site> sites, IEnumerable<River> rivers)
+		public Game(int punter,
+			int punters,
+			IEnumerable<Site> sites,
+			IEnumerable<River> rivers,
+			IEnumerable<Futures> futures)
 		{
 			this.punter = punter;
 			this.punters = punters;
+			this.futures = futures.ToArray();
 			this.sites = sites.ToDictionary(
 				x => x.Id,
 				x => x);
@@ -62,6 +68,7 @@ namespace puntvis
 			DotFormatter.Write(punters,
 				sites.Values.ToList(),
 				rivers.Values.ToList(),
+				futures,
 				$"{destinationFolder}/{stateNumber}.dot");
 		}
 
