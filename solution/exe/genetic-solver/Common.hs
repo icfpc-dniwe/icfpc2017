@@ -1,28 +1,18 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE ExistentialQuantification #-}
 
 module Common where
 
+import Control.Arrow (first)
 import Data.Proxy (Proxy(..))
-import qualified Data.Foldable as Foldable (toList)
-import Data.Sequence (Seq(..), ViewL(..), viewl, (|>))
-import qualified Data.Sequence as Seq
-import Data.Default (Default, def)
-import Data.Graph.Inductive.Graph (LEdge, Edge, Node, mkGraph, gmap, emap, toEdge, toLEdge, labEdges, edgeLabel)
+import Data.Graph.Inductive.Graph (Node, mkGraph, gmap)
 import Data.Graph.Inductive.PatriciaTree (Gr)
 
-import DNIWE.Punt.Solver.Types (StartingBoard(..), Future(..), PunterId, MineScores)
-import DNIWE.Punt.Solver.Game ()
-import DNIWE.Punt.Solver.Score (boardScores)
+import DNIWE.Punt.Solver.Types (Future(..), PunterId, Mines)
 import GHC.Generics (Generic)
 
-import Data.Vector.Unboxed (Vector, (//))
-import qualified Data.Vector.Unboxed as Vector
-
-import Data.Set (Set)
 import qualified Data.Set as Set
-
-import DNIWE.Punt.Solver.Game (relabelEdge)
 
 emap' :: ((Node, Node) -> e1 -> e2) -> Gr v e1 -> Gr v e2
 emap' f = gmap f' where
@@ -33,8 +23,8 @@ emap' f = gmap f' where
 -----
 
 data Board = Board {
-    boardMap   :: Gr () Bool {- Bool: is free? -}
-  , boardMines :: Set Node}
+    boardMap   :: Gr () ()
+  , boardMines :: Mines}
   deriving (Show, Eq, Generic)
 
 
@@ -42,7 +32,7 @@ mkInitialBoard :: [(Int, Bool)] -> [(Int, Int)] -> Board
 mkInitialBoard sites rivers = Board {
     boardMap = mkGraph
       (map (\(a, _) -> (a, ())) sites)
-      (map (\(a, b) -> (a, b, True)) rivers)
+      (map (\(a, b) -> (a, b, ())) rivers)
   , boardMines = Set.fromList (map fst . filter snd $ sites)}
 
 -----
@@ -153,7 +143,20 @@ relabelEdge' (n1, n2) f = emap' f' where
 
 
 class Player p where
-  initialState :: PunterId -> Int -> Board -> Proxy p -> IO p
-  updateState  :: [(PunterId, Move)] -> p -> IO p
-  playerId     :: p -> PunterId
-  makeMove     :: p -> IO (p, Move)
+  initialState  :: PunterId -> Int -> [Future] -> Board -> Proxy p -> IO p
+  updateState   :: [(PunterId, Move)] -> p -> IO p
+  playerId      :: p -> PunterId
+  playerFutures :: p -> [Future]
+  makeMove      :: p -> IO (p, Move)
+  feedback      :: p -> String
+  feedback _   = ""
+
+data PlayerWrapper = forall p. (Player p) => PlayerWrapper p
+
+instance Player PlayerWrapper where
+  initialState                     = error "Must be concrete player type"
+  updateState ms (PlayerWrapper p) = PlayerWrapper <$> (updateState ms p)
+  playerId       (PlayerWrapper p) = playerId p
+  playerFutures  (PlayerWrapper p) = playerFutures p
+  makeMove       (PlayerWrapper p) = (first PlayerWrapper) <$> (makeMove p)
+  feedback       (PlayerWrapper p) = feedback p

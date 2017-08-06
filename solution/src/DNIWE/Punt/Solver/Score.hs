@@ -1,6 +1,8 @@
 module DNIWE.Punt.Solver.Score
   ( boardScores
   , playerScore
+  , defaultScoringFunction
+  , futuresScoringFunction
   ) where
 
 import qualified Data.Set as S
