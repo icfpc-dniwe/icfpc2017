@@ -32,7 +32,7 @@ def GetProbFunctions(num_features, learning_rate=1e-4, ret_updates=True):
     updates = lasagne.updates.momentum(grads, params, learning_rate=learning_rate)
     action_fn = theano.function([adjustment_var, features_var, mask_var], prob)
     if ret_updates:
-        updates_fn = theano.function([adjustment_var, features_var, mask_var, reward_var], desc, updates=updates, allow_input_downcast=True)
+        updates_fn = theano.function([adjustment_var, features_var, mask_var, reward_var], [], updates=updates, allow_input_downcast=True)
         return net, action_fn, updates_fn
     else:
         return net, action_fn

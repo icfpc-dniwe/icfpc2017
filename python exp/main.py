@@ -31,7 +31,7 @@ def main(t):
         rpb = 0.0
         game = GenerateGame(num_players, 10, 'newman')
         # TrainPlayer(game, net, a, u, num_games=100, random_player_prob=0.1, experiment_name='newman_test')
-        net_player = lambda x, l: NetworkPlayer(net, a, u, l, 0.6, save_iter=50, experiment_name='newman_test' + str(x))
+        net_player = lambda x, l: NetworkPlayer(net, a, u, l, 0.6, save_iter=10, experiment_name='newman_test' + str(x))
         players = [net_player(0, 2), net_player(1, 8), net_player(1, 16), RandomPlayer()]
     elif t == '3':
         num_players = 4
