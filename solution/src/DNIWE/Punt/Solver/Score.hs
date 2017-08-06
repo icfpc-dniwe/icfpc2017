@@ -8,24 +8,23 @@ import qualified Data.Set as S
 import qualified Data.IntMap.Strict as M
 import Data.Graph.Inductive.Graph
 import Data.Graph.Inductive.Basic
-import Data.Graph.Inductive.Query.BFS
-import Data.Graph.Inductive.Query.DFS
+import qualified Data.Graph.Inductive.Query.DFS as DFS
+import qualified Data.Graph.Inductive.Query.BFS as BFS
 import Data.Graph.Inductive.Query.SP
 
 import DNIWE.Punt.Solver.Types
 
-defaultScoringFunction :: Int -> Int
+defaultScoringFunction :: Int -> Score
 defaultScoringFunction = (^ (2 :: Int))
 
-futuresScoringFunction :: Int -> Int
+futuresScoringFunction :: Int -> Score
 futuresScoringFunction = (^ (3 :: Int))
 
 boardScores :: StartingBoard -> MineScores
 boardScores (StartingBoard {..}) = M.unionsWith M.union $ map scoreOne $ S.toList sbMines
-  where scoreOne mine = M.singleton mine $ M.fromList $ map (head . unLPath) $ spTree mine weightedBoard
-        weightedBoard = undir $ emap (const 1) sbBoard
+  where scoreOne mine = M.singleton mine $ M.fromList $ BFS.level mine $ undir sbBoard
 
-playerScore :: GameData -> GameState -> Int
+playerScore :: GameData -> GameState -> Score
 playerScore (GameData {..}) (GameState {..}) = totalDefault + futureDefault
   where curReachable = mineReachable statePlayer stateBoard
 
@@ -39,7 +38,7 @@ playerScore (GameData {..}) (GameState {..}) = totalDefault + futureDefault
 --
 
 mineReachable :: PunterId -> Board -> Node -> [Node]
-mineReachable player graph start = xdfsWith (map snd . filterTaken . lneighbors') node' [start] graph
+mineReachable player graph start = DFS.xdfsWith (map snd . filterTaken . lneighbors') node' [start] graph
   where filterTaken = filter ((== Just player) . edgeTaken . fst)
 
 edgesNearMines :: Int -> StartingBoard -> NearestEdges

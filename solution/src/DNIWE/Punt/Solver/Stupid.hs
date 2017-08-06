@@ -17,7 +17,7 @@ import DNIWE.Punt.Solver.Score
 newtype StupidScore = StupidScore { stupidScores :: Map PunterId Int }
                     deriving (Show)
 
-stupidMetric :: PunterId -> StupidScore -> Int
+stupidMetric :: PunterId -> StupidScore -> Score
 stupidMetric player (StupidScore {..}) = myScore - othersMax
   where myScore = stupidScores M.! player
         othersMax = foldr max 0 $ map snd $ M.toList $ M.delete player stupidScores
@@ -39,27 +39,31 @@ stupidGameTree' 0 visitedStates game gstate = (visitedStates, finalScore, [])
 stupidGameTree' n visitedStates game gstate = (newVisitedStates, curScore, curEdges)
   where player = statePlayer gstate
 
-        (newVisitedStates, results) = nextAction visitedStates $ freeEdges gstate
+        (newVisitedStates, results) = stupidNextAction n game gstate visitedStates $ map toEdge $ freeEdges gstate
         curActions = sortBy (comparing (Down . stupidMetric player . fst)) results
         curEdges = map snd curActions
         curScore = case curActions of
                      (score, _):_ -> score
                      _ -> StupidScore { stupidScores = M.singleton player (playerScore game gstate) }
 
-stupidNextAction oldVisited [] = (oldVisited, [])
-stupidNextAction oldVisited ((toEdge -> edge):others)
-  | newHash `IS.member` oldVisited = nextAction oldVisited others
-  | otherwise = (newVisited, (newScore, edge):nextEdges)
+stupidNextAction :: Int -> GameData -> GameState -> IntSet -> [Edge] -> (IntSet, [(StupidScore, Edge)])
+stupidNextAction n game gstate = process
+  where process oldVisited [] = (oldVisited, [])
+        process oldVisited (edge:others)
+          | newHash `IS.member` oldVisited = process oldVisited others
+          | otherwise = (newVisited, (newScore, edge):nextEdges)
 
-  where newState' = performClaim player edge gstate
-        newState = newState' { statePlayer = nextPlayer game $ statePlayer newState' }
-        newHash = gameStateHash newState
+          where player = statePlayer gstate
 
-        (curVisited, score, _) = stupidGameTree' (n - 1) oldVisited game newState
-        curVisited' = IS.insert newHash curVisited
+                newState' = performClaim player edge gstate
+                newState = newState' { statePlayer = nextPlayer game $ statePlayer newState' }
+                newHash = gameStateHash newState
 
-        (newVisited, nextEdges) = nextAction curVisited' others
+                (curVisited, score, _) = stupidGameTree' (n - 1) oldVisited game newState
+                curVisited' = IS.insert newHash curVisited
 
-        newScore
-          | player `M.member` stupidScores score = score
-          | otherwise = score { stupidScores = M.insert player (playerScore game $ newState' { statePlayer = player }) $ stupidScores score }
+                (newVisited, nextEdges) = process curVisited' others
+  
+                newScore
+                  | player `M.member` stupidScores score = score
+                  | otherwise = score { stupidScores = M.insert player (playerScore game $ newState' { statePlayer = player }) $ stupidScores score }
