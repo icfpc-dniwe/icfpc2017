@@ -2,15 +2,18 @@ import networkx as nx
 import numpy as np
 
 
-def GenerateGame(size='small'):
-    if size == 'small':
+def GenerateGame(num_players=2, num_mines=2, graph_type='small'):
+    if graph_type == 'small':
         graph = nx.house_x_graph()
-    else:
-        pass #TODO:
+    elif graph_type == 'star':
+        graph = nx.generators.classic.star_graph(num_players * num_mines * 25)
+    elif graph_type == 'random':
+        graph = nx.generators.random_graphs.dense_gnm_random_graph(num_players * num_mines * 15,
+                                                                   num_players * num_mines * 100)
     for node in graph:
         graph.node[node]['mine'] = 0
-    num_mines = 2
-    num_players = 3
+    # num_mines = 2
+    # num_players = 2
     mine_nodes = np.random.choice(graph.nodes(), num_mines, replace=False)
     for mine in mine_nodes:
         graph.node[mine]['mine'] = 1
@@ -20,6 +23,7 @@ def GenerateGame(size='small'):
     game['num_players'] = num_players
     game['current_player'] = 0
     game['player_mines'] = [[] for _ in range(num_players)]
+    game['player_reward'] = [0] * num_players
     game['graph'] = graph
     game['mines'] = mine_nodes
     CalcPoints(game)
@@ -48,18 +52,27 @@ def EdgePoints(graph, edge):
 def ClaimEdge(game, edge, progress_game=True):
     graph = game['graph']
     player = game['current_player']
+    player_mines = game['player_mines'][player]
     # check if edge is already claimed
     if graph[edge[0]][edge[1]]['claimed'] >= 0:
         # Huge penalty for passing
-        return -10
-    reward_points = EdgePoints(graph, edge)
-    if len(game['player_mines'][player]) == 0:
-        # Small bonus for claiming river
-        reward_points *= 1e-3
+        reward_points = -10
     else:
-        # Get reward for claiming new node with mine already
-        reward_points *= len(game['player_mines'][player])
+        reward_points = EdgePoints(graph, edge)
+        if graph.node[edge[0]]['mine'] > 0:
+            for p in range(2):
+                if not edge[p] in player_mines:
+                    player_mines.append(edge[p])
+                    reward_points += 1
+        if len(player_mines) == 0:
+            # Small bonus for claiming river
+            reward_points *= 1e-3
+        else:
+            # Get reward for claiming new node with mine already
+            reward_points *= len(game['player_mines'][player])
     if progress_game:
+        game['player_mines'][player] = player_mines
+        game['player_reward'][player] += reward_points
         graph[edge[0]][edge[1]]['claimed'] = player
         game['current_player'] += 1
         if game['current_player'] >= game['num_players']:
