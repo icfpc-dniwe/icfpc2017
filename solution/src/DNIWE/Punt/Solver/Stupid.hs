@@ -36,7 +36,7 @@ stupidGameTree' 0 visitedStates game gstate = (visitedStates, finalScore, [])
 stupidGameTree' n visitedStates game gstate = (newVisitedStates, curScore, curEdges)
   where player = statePlayer gstate
 
-        (newVisitedStates, results) = stupidNextAction n game gstate visitedStates $ freeEdges game gstate
+        (newVisitedStates, results) = force $ stupidNextAction n game gstate visitedStates $ freeEdges game gstate
         curActions = sortBy (comparing (Down . stupidMetric player . fst)) results
         curEdges = map snd curActions
         curScore = case curActions of
