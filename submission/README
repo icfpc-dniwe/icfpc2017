@@ -12,3 +12,5 @@ zohl
 Our solutions is just NMax algorithm with stupid scorring function (just the scores every player gets with every move).
 Only twist is using stupid futures estimations.
 One prediction is made with length 1 (first of all possible with length 1).
+
+We require INTERNET ACCESS during INSTALL phase due to using cabal sandbox to build our code.
