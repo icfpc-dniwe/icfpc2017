@@ -73,7 +73,8 @@ namespace puntvis
 							new
 							{
 								claim = new { punter = 0, source = 0, target = 0 },
-								pass = new { punter = 0 }
+								pass = new { punter = 0 },
+								splurge = new { punter = 0, route = new [] { 0 } }
 							}
 						}
 					},
@@ -84,7 +85,8 @@ namespace puntvis
 							new
 							{
 								claim = new { punter = 0, source = 0, target = 0 },
-								pass = new { punter = 0 }
+								pass = new { punter = 0 },
+								splurge = new { punter = 0, route = new [] { 0 } }
 							}
 						},
 						scores = new[] { new {punter = 0, score = 0} }
@@ -98,6 +100,8 @@ namespace puntvis
 							return new ClaimAction(x.claim.punter, x.claim.source, x.claim.target) as Action;
 						if (x.pass != null)
 							return new PassAction(x.pass.punter) as Action;
+						if (x.splurge != null)
+							return new SplurgeAction(x.splurge.punter, x.splurge.route) as Action;
 						throw new InvalidOperationException($"Unable to parse value {x} in {jsonDiff}");
 					})
 					.ToList();

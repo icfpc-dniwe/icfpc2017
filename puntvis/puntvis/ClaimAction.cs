@@ -19,13 +19,23 @@
 
 	internal class ClaimAction: Action
 	{
-		public readonly  int source;
-		public readonly  int target;
+		public readonly int source;
+		public readonly int target;
 
 		public ClaimAction(int punter, int source, int target) : base(punter)
 		{
 			this.source = source;
 			this.target = target;
+		}
+	}
+
+	internal class SplurgeAction : Action
+	{
+		public readonly int[] route;
+
+		public SplurgeAction(int punter, int[] route) : base(punter)
+		{
+			this.route = route;
 		}
 	}
 }

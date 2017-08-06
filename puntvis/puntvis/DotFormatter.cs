@@ -82,6 +82,8 @@ namespace puntvis
 
 				args["label"] = getEmptyString(diff) + label;
 				args["color"] = palette[river.owner.Value];
+				if (river.splurge)
+					args["style"] = "dashed";
 			}
 
 			return $"{river.Source.Id} -- {river.Target.Id} [{formatDictionary(args)}];";
