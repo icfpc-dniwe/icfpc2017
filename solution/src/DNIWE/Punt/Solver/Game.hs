@@ -9,6 +9,9 @@ import Data.Graph.Inductive.PatriciaTree
 import DNIWE.Punt.Solver.Types
 import DNIWE.Punt.Solver.Score
 
+-- heuristics
+edgeLookupDepth = 3
+
 -- game moves
 
 performClaim :: PunterId -> Edge -> GameState -> GameState
@@ -36,6 +39,7 @@ gameData board futures playerId totalPlayers =
            , gameFutures = M.singleton playerId futures
            , gameMyId = playerId
            , gamePlayersN = totalPlayers
+           , gameEdgesNearMines = edgesNearMines edgeLookupDepth board
            }
 
 initialState :: GameData -> GameState

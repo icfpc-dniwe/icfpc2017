@@ -21,7 +21,7 @@ type NodeScores = IntMap Int
 
 type Mine = Node
 type MineScores = IntMap NodeScores
-type Mines = Set Node
+type Mines = Set Mine
 
 data Future = Future { futureMine :: !Mine
                      , futureTarget :: !Node
