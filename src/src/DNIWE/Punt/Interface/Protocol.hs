@@ -12,6 +12,7 @@ import qualified Data.Aeson.Parser as JSONP
 import Data.Conduit (ConduitM, await, yield)
 
 import DNIWE.Punt.Interface.Types
+import DNIWE.Punt.Interface.Utility
 import DNIWE.Punt.Solver.Types
 import DNIWE.Punt.Solver.Game
 
@@ -52,13 +53,6 @@ makeMove myId (Just (MoveOption (a, b))) = Option { optionPunter = myId, optionS
 makeMove myId (Just (MoveSplurge es)) = Splurge { splurgePunter = myId, splurgeRoute = edgesToRoute es }
 makeMove myId (Just MovePass) = Pass { passPunter = myId }
 makeMove myId Nothing = Pass { passPunter = myId }
-
-sanitizeEdge :: Graph gr => gr a b -> Edge -> Edge
-sanitizeEdge gr e@(a, b)
-  | hasEdge gr e = e
-  | hasEdge gr re = re
-  | otherwise = error "sanitizeEdge: edge does not exist"
-  where re = (b, a)
 
 applyMove :: GameData -> Move -> GameState -> GameState
 applyMove _ (Pass _) state = state

@@ -22,6 +22,9 @@ defaultLookupDepth = 1
 defaultExperimentsNum :: Int -> Int
 defaultExperimentsNum = (* 2)
 
+defaultTimeout :: Int
+defaultTimeout = 900 * 1000 -- ms
+
 -- game moves
 
 performClaim :: GameData -> PunterId -> Edge -> GameState -> GameState

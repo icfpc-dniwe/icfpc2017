@@ -7,7 +7,7 @@
 module DNIWE.Punt.Interface.Types where
  -- export all
 
-import Data.Char (isUpper, toLower)
+import Data.Char (toLower)
 import Control.Applicative
 import Data.Default.Class
 
@@ -18,6 +18,7 @@ import Data.IntSet (IntSet)
 import Data.Text (Text)
 import GHC.Generics (Generic)
 
+import DNIWE.Punt.Interface.Utility
 import DNIWE.Punt.Solver.Types
 
 {- TODO
@@ -36,26 +37,11 @@ import DNIWE.Punt.Solver.Types
 -}
 
 
-dropPrefix :: String -> String
-dropPrefix "" = ""
-dropPrefix (c:t)
-  | isUpper c = toLower c : t
-  | otherwise = dropPrefix t
-
 jsonOptions :: Options
-jsonOptions = defaultOptions {
-    fieldLabelModifier     = dropPrefix
-  , sumEncoding            = ObjectWithSingleField
-  , constructorTagModifier = map toLower}
-
-
-data Message = Message {
-    msgNum  :: Int
-  , msgData :: Text -- TODO parse?
-  } deriving (Show, Eq, Generic)
-
-
-
+jsonOptions = defaultOptions { fieldLabelModifier     = dropPrefix
+                             , sumEncoding            = ObjectWithSingleField
+                             , constructorTagModifier = map toLower
+                             }
 
 -- Handshake
 

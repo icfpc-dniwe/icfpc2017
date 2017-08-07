@@ -30,13 +30,13 @@ randomSample n vec = do
 
   return $ V.ifilter (\i _ -> i `IS.member` fixedIds) vec
 
-ulevel :: Graph gr => Node -> gr a b -> [(Node,Int)]
+ulevel :: Graph gr => Node -> gr a b -> [(Node, Int)]
 ulevel v = uleveln [(v,0)]
 
 usuci :: Context a b -> Int -> [(Node, Int)]
 usuci c i = zip (neighbors' c) (repeat i)
 
-uleveln :: Graph gr => [(Node,Int)] -> gr a b -> [(Node,Int)]
+uleveln :: Graph gr => [(Node, Int)] -> gr a b -> [(Node, Int)]
 uleveln []         _             = []
 uleveln _          g | isEmpty g = []
 uleveln ((v,j):vs) g = case match v g of
