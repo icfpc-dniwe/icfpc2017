@@ -65,7 +65,7 @@ def prep():
     winners = TrainPlayers(game, players, 10000, 0.00, echo_idx=1000)
     print('_small1:', Counter(winners))
     game = GenerateGame(2, 4, 'newman')
-    net, a, u = GetProbFunctions(10, learning_rate=1e-3)
+    net, a, u = GetProbFunctions(10, learning_rate=3*1e-4)
     LoadNet(net['desc'], 'weights/test_middle_small1_9999.npz')
     LoadNet(net2['desc'], 'weights/test_middle_small1_9999.npz')
     players = [net_player('_newman0', 10, 0.8, net, a, u, save_iter=10),

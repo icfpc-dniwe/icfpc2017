@@ -22,9 +22,9 @@ def StartPlayer(num_features, learn=True, learning_rate=1e-4, history_level=1,
 class IPCWatcher(object):
 
     def __init__(self):
-        pass
+        self.num_features = 0
 
-    #query {"action": "settings"}
+        #query {"action": "settings"}
     #answer {"action": "settings", "feature_count": int, "return_prob": bool}
     def readSettings(self):
         query = {'action': 'settings'}
@@ -34,11 +34,12 @@ class IPCWatcher(object):
             settings = dict()
             settings['feature_count'] = answer['feature_count']
             settings['return_prob'] = answer['return_prob']
+            self.num_features = settings['feature_count']
         else:
             raise RuntimeError
 
     #query {"action": "incidence_matrix"}
-    #answer {"action": "incidence_matrix", "node_count": int, "edges": [{"src": int, "dst": int, "features": double, "valid": bool}]}
+    #answer {"action": "incidence_matrix", "node_count": int, "edges": [{"src": int, "dst": int, "features": [double], "valid": bool}]}
     def readIncidenceMartix(self):
         # Read incidence matrix from json
         # Read features from json (every row has N features for edge) -- "features"
@@ -46,10 +47,23 @@ class IPCWatcher(object):
         query = {'action': 'incidence_matrix'}
         self.writeJSON(json.dumps(query))
         answer = json.loads(self.readJSON())
-        if answer['action'] == 'settings':
-            pass
-        else:
+        if answer['action'] != 'settings':
             raise RuntimeError
+        num_edges = len(answer['edges'])
+        incidence_matrix = np.zeros((answer['node_count'], num_edges), dtype='int8')
+        edges = np.zeros((num_edges, 2), dtype='int32')
+        features = np.zeros((num_edges, self.num_features), dtype='float32')
+        mask = np.zeros((num_edges,), dtype='int8')
+        for edge_idx, edge in enumerate(answer['edges']):
+            src = edge['src']
+            dst = edge['dst']
+            edges[edge_idx, 0] = src
+            edges[edge_idx, 1] = dst
+            features[edge_idx, :] = np.array(edge['features'])
+            mask[edge_idx] = 1 if edge['valid'] else 0
+            incidence_matrix[src, edge_idx] = 1
+            incidence_matrix[dst, edge_idx] = 1
+        return edges, incidence_matrix, features, mask
 
     #query {"action": "put_probabilities", "values": [{"src": int, "dst": int, "probability": double}]}
     #answer {"action": "put_probabilities", "reward": double}
@@ -59,11 +73,10 @@ class IPCWatcher(object):
         query = {'action': 'put_probabilities', 'values': values}
         self.writeJSON(json.dumps(query))
         answer = json.loads(self.readJSON())
-        if answer['action'] == 'put_probabilities':
-            reward = answer['reward']
-            return reward
-        else:
+        if answer['action'] != 'put_probabilities':
             raise RuntimeError
+        reward = answer['reward']
+        return reward
 
     # query {"action": "put_action", "edge": {"src": int, "dst": int}}
     # answer {"action": "put_action", "reward": double}
@@ -72,11 +85,10 @@ class IPCWatcher(object):
         query = {'action': 'put_action', 'edge': {'src': edge[0], 'dst': edge[1]}}
         self.writeJSON(json.dumps(query))
         answer = json.loads(self.readJSON())
-        if answer['action'] == 'put_action':
-            reward = answer['reward']
-            return reward
-        else:
+        if answer['action'] != 'put_action':
             raise RuntimeError
+        reward = answer['reward']
+        return reward
 
     # query {"action": "is_finished"}
     # answer {"action": "is_finished", "is_finished": bool}
@@ -84,10 +96,9 @@ class IPCWatcher(object):
         query = {'action': 'finished'}
         self.writeJSON(json.dumps(query))
         answer = json.loads(self.readJSON())
-        if answer['action'] == 'finished':
-            return not answer['finished']
-        else:
+        if answer['action'] != 'finished':
             raise RuntimeError
+        return not answer['finished']
 
     def writeJSON(self, json_string):
         print('{}:{}'.format(len(json_string), json_string))
