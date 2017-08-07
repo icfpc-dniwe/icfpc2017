@@ -9,15 +9,17 @@ import sys
 from players import *
 from train import GetProbFunctions
 from common import ProdFeatures
+from net_tools import LoadNet
 
 
 def StartPlayer(num_features, learn=True, learning_rate=1e-4, history_level=1,
-                history_coeff=0.9, experiment_name='deploy_test'):
+                history_coeff=0.9, experiment_name='deploy_test', weights='weights/test_middle_newman00_99.npz'):
     if learn:
         net, a, u = GetProbFunctions(num_features, learning_rate=learning_rate, ret_updates=True)
     else:
         net, a = GetProbFunctions(num_features, learning_rate=learning_rate, ret_updates=False)
         u = None
+    LoadNet(net['desc'], weights)
     return NetworkPlayer(net, a, u, reward_length=history_level, history_coeff=history_coeff,
                          save_iter=10000, experiment_name=experiment_name)
 
