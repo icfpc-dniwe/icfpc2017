@@ -88,7 +88,7 @@ executable stupid-solver
                     , ScopedTypeVariables
   default-language:  Haskell2010
 
-  ghc-options:       -Wall
+  ghc-options:       -Wall -threaded
 
 executable offline-solver
   hs-source-dirs:    exe/offline-solver
@@ -110,7 +110,7 @@ executable offline-solver
                     , ViewPatterns
                     , ScopedTypeVariables
   default-language:  Haskell2010
-  ghc-options:       -Wall
+  ghc-options:       -Wall -threaded
 
 
 executable genetic-solver
@@ -130,7 +130,7 @@ executable genetic-solver
                    , cereal
                    , fgl
   default-language:  Haskell2010
-  ghc-options:       -Wall
+  ghc-options:       -Wall -threaded
 
 
 test-suite protocol

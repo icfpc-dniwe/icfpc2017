@@ -3,8 +3,10 @@ module DNIWE.Punt.Estimator.Protocol where
 import Control.Monad
 import Control.DeepSeq
 import Data.Maybe
+import Data.Monoid
 import qualified Data.Aeson as JSON
 import Data.Conduit
+import qualified Data.ByteString.Char8 as B
 import qualified Data.Conduit.List as CL
 import qualified Data.Map as M
 import qualified Data.IntSet as IS
@@ -16,6 +18,7 @@ import System.Timeout
 import Data.Graph.Inductive.Graph
 import Control.Exception
 import Control.Monad.Trans.Class
+import Control.Concurrent (threadDelay)
 import Control.Concurrent.Async
 import Control.Concurrent.STM
 import Control.Concurrent.STM.TMQueue
@@ -63,11 +66,12 @@ runEstimatorClient path comp = do
   requestQueue <- newTQueueIO
   resultQueue <- newTQueueIO
 
-  let processRequest SettingsEstRequest = return $ SettingsEstResponse { estimatorFeatureCount = defaultFeatureCount
-                                                                       , estimatorReturnProb = False
-                                                                       }
-      processRequest IncidenceEstRequest = do
+  let processRequest SettingsEstRequest = do
         void $ atomically $ tryPutTMVar syncVar ()
+        return $ SettingsEstResponse { estimatorFeatureCount = defaultFeatureCount
+                                     , estimatorReturnProb = False
+                                     }
+      processRequest IncidenceEstRequest = do
         (curGame, Just curState) <- atomically $ (,) <$> readTMVar gameDataVar <*> readTMQueue gameStateQueue
         return $ IncidenceEstResponse { estimatorEdges = gameIncidence curGame curState }
       processRequest (PutProbabilitiesEstRequest {..}) = fail "probabilities are not implemented"
@@ -80,15 +84,18 @@ runEstimatorClient path comp = do
 
       processJSON = await >>= \case
         Nothing -> return ()
-        Just (_, v) -> case JSON.fromJSON v of
-          JSON.Error e   -> fail e
-          JSON.Success x -> yield x >> processJSON
+        Just (_, v) -> do
+          case JSON.fromJSON v of
+            JSON.Error e   -> fail e
+            JSON.Success x -> yield x >> processJSON
       
-      stdinProducer = forever (lift (atomically $ readTQueue requestQueue) >>= yield) =$= CL.mapM processRequest =$= CL.map (encodeMessage . JSON.toJSON)
+      stdinProducer = forever (lift (atomically $ readTQueue requestQueue) >>= yield) =$= CL.mapM processRequest =$= CL.map ((<> "\n") . encodeMessage . JSON.toJSON)
       stdoutConsumer = conduitParser messageParser =$= processJSON =$= CL.mapM_ (atomically . writeTQueue requestQueue)
 
-  let conduitThread = sourceProcessWithStreams (P.proc path []) stdinProducer stdoutConsumer (return ())
+  let conduitThread = void $ sourceProcessWithStreams (P.proc path []) stdinProducer stdoutConsumer (CL.mapM_ B.putStrLn)
+
   withAsync conduitThread $ \_ -> do
+    threadDelay 1000000
     void $ atomically $ takeTMVar syncVar
     comp gameDataVar gameStateQueue resultQueue
 
