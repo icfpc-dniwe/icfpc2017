@@ -27,6 +27,7 @@ library
                    , DNIWE.Punt.Solver.Score
                    , DNIWE.Punt.Solver.Stupid
                    , DNIWE.Punt.Solver.Game
+                   , DNIWE.Punt.Solver.Utility
   build-depends:     base >=4.9 && <4.10
                    , aeson
                    , aeson-casing
@@ -149,5 +150,5 @@ test-suite protocol
                    , bytestring
                    , aeson
                    , QuickCheck
-  default-language:    Haskell2010
-  ghc-options: -Wall
+  default-language:  Haskell2010
+  ghc-options:       -Wall

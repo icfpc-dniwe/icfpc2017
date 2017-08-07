@@ -1,8 +1,8 @@
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TupleSections #-}
-
 
 module DNIWE.Punt.Interface.Types where
  -- export all
@@ -13,7 +13,7 @@ import Control.Applicative
 import Data.Aeson (ToJSON(..), FromJSON(..), genericParseJSON, genericToJSON, genericToEncoding)
 import Data.Aeson.Types (Options(..), SumEncoding(..), defaultOptions)
 
-import Data.Set (Set)
+import Data.IntSet (IntSet)
 import Data.Text (Text)
 import GHC.Generics (Generic)
 import Data.Default.Class
@@ -114,7 +114,7 @@ newtype GameBoard = GameBoard { getBoard :: Board }
 data BoardMap = BoardMap {
     mapSites  :: [Site]
   , mapRivers :: [River]
-  , mapMines :: Set SiteId
+  , mapMines :: IntSet
   } deriving (Show, Eq, Generic)
 
 instance FromJSON BoardMap where
@@ -124,27 +124,21 @@ instance ToJSON BoardMap where
   toJSON = genericToJSON jsonOptions
   toEncoding = genericToEncoding jsonOptions
 
-data Settings = Settings {
-    settingsFutures :: Bool
-  , settingsSplurges :: Bool
-  , settingsOptions :: Bool
-  } deriving (Show, Eq, Generic)
+instance Default GameSettings where
+  def = GameSettings { settingsFutures = False
+                     , settingsSplurges = False
+                     , settingsOptions = False
+                     }
 
-instance Default Settings where
-  def = Settings { settingsFutures = False
-                 , settingsSplurges = False
-                 , settingsOptions = False
-                 }
-
-instance FromJSON Settings where
+instance FromJSON GameSettings where
   parseJSON = genericParseJSON jsonOptions
 
-instance ToJSON Settings where
+instance ToJSON GameSettings where
   toJSON = genericToJSON jsonOptions
   toEncoding = genericToEncoding jsonOptions
 
 -- S -> P: {"punter" : p, "punters" : n, "map" : map, "settings" : settings}
-data SetupRequest = SetupRequest { srPunter :: PunterId, srPunters :: Int, srMap :: BoardMap, srSettings :: Maybe Settings }
+data SetupRequest = SetupRequest { srPunter :: PunterId, srPunters :: Int, srMap :: BoardMap, srSettings :: Maybe GameSettings }
     deriving (Show, Eq, Generic)
 
 instance FromJSON SetupRequest where

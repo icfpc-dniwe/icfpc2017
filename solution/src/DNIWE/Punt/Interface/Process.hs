@@ -21,14 +21,14 @@ gameMoveToFutureEdge (MovePass) = Nothing
 initializeState :: SetupRequest -> (GameData, SetupResponse)
 initializeState setup = (game, game `deepseq` setupResp)
   where board = boardFromMap $ srMap setup
-        Settings {..} = fromMaybe def $ srSettings setup
+        settings@(GameSettings {..}) = fromMaybe def $ srSettings setup
         myId = srPunter setup
 
-        preGame = gameData board [] myId (srPunters setup)
+        preGame = gameData board [] myId (srPunters setup) settings
         futures
           | settingsFutures = take 1 $ mapMaybe (gameMoveToFutureEdge >=> maybeFuture preGame) $ stupidGameTree (3 * srPunters setup)preGame (initialState game)
           | otherwise = []
         setupResp = SetupResponse { srReady = myId
                                   , srFutures = map (uncurry PFuture) futures
                                   }
-        game = gameData board (map (uncurry Future) futures) myId (srPunters setup)
+        game = gameData board (map (uncurry Future) futures) myId (srPunters setup) settings

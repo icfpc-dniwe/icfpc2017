@@ -1,15 +1,9 @@
 module DNIWE.Punt.Solver.Game where
 
-import Control.Monad
-import Data.Maybe
-import Data.Tree (Tree)
 import qualified Data.IntMap.Strict as IM
+import qualified Data.IntSet as IS
 import qualified Data.Map.Strict as M
-import qualified Data.Set as S
 import Data.Graph.Inductive.Graph
-import Data.Graph.Inductive.PatriciaTree
-import Control.Monad.Random.Class
-import qualified Data.Graph.Inductive.Query.DFS as DFS
 
 import DNIWE.Punt.Solver.Types
 import DNIWE.Punt.Solver.Score
@@ -24,9 +18,11 @@ performClaim :: PunterId -> Edge -> GameState -> GameState
 performClaim p edge state = state { stateTaken = M.insert edge p $ stateTaken state }
 
 performOption :: PunterId -> Edge -> GameState -> GameState
-performOption p edge state@(GameState {..}) =
-    if stateRemainingOptions >= 0 then state { stateTaken = M.insert edge p stateTaken, stateRemainingOptions = stateRemainingOptions - 1 }
-                                  else error "no more options available!"
+performOption p edge state@(GameState {..})
+  | stateRemainingOptions IM.! p >= 0 = state { stateTaken = M.insert edge p stateTaken
+                                             , stateRemainingOptions = IM.adjust (subtract 1) p stateRemainingOptions
+                                             }
+  | otherwise = error "no more options available!"
 
 performSplurge :: PunterId -> [Edge] -> GameState -> GameState
 performSplurge _ [] state = state
@@ -41,24 +37,27 @@ preGameMoveToFutureEdge (MovePass) = Nothing
 
 -- other
 
-relabelEdge :: LEdge b -> Gr a b -> Gr a b
-relabelEdge e@(a, b, _) g = insEdge e $ delEdge (a, b) g
-
-gameData :: StartingBoard -> [Future] -> PunterId -> Int -> GameData
-gameData board futures playerId totalPlayers =
+gameData :: StartingBoard -> [Future] -> PunterId -> Int -> GameSettings -> GameData
+gameData board futures playerId totalPlayers settings =
   GameData { gameStarting = board
            , gameScoring = boardScores board
            , gameFutures = IM.singleton playerId futures
            , gameMyId = playerId
            , gamePlayersN = totalPlayers
            , gameEdgesNearMines = edgesNearMines defaultLookupDepth board
+           , gameSettings = settings
            }
 
+gamePlayers :: GameData -> [PunterId]
+gamePlayers game = [0..gamePlayersN game - 1]
+
 initialState :: GameData -> GameState
-initialState (GameData {..}) = GameState { stateTaken = M.empty
-                                         , statePlayer = gameMyId
-                                         , stateRemainingOptions = let (StartingBoard {..}) = gameStarting in length sbMines
-                                         }
+initialState game = GameState { stateTaken = M.empty
+                              , statePlayer = gameMyId game
+                              , stateRemainingOptions = if settingsOptions (gameSettings game)
+                                                        then IM.fromList $ zip (gamePlayers game) (repeat $ IS.size $ sbMines $ gameStarting game)
+                                                        else IM.empty
+                              }
 
 
 freeEdges :: GameData -> GameState -> [Edge]
@@ -72,7 +71,7 @@ maybeFuture game (a, b)
 
   where aMine = mineCheck a 
         bMine = mineCheck b
-        mineCheck n = n `S.member` sbMines (gameStarting game)
+        mineCheck n = n `IS.member` sbMines (gameStarting game)
 
 nextPlayer :: GameData -> PunterId -> PunterId
 nextPlayer game n = (n + 1) `mod` gamePlayersN game
@@ -84,17 +83,3 @@ edgesToRoute' ((src,dst):t) res = edgesToRoute' t $ if src == last res then res 
 
 edgesToRoute :: [Edge] -> [Node]
 edgesToRoute es = edgesToRoute' es []
-
-randomVersatile :: MonadRandom m => Float -> [Node] -> Gr a b -> m [Tree Node]
-randomVersatile percentage starts graph = do
-  let maybeDrop x = do
-        chance <- getRandom
-        if chance <= percentage
-          then return $ Just x
-          else return Nothing
-  dropped <- liftM (S.fromList . catMaybes) $ mapM (maybeDrop . toEdge) $ labEdges graph
-
-  let filterDropped = filter (not . (`S.member` dropped))
-      filterContext ctx = map snd (filterDropped $ map (node' ctx, ) $ pre' ctx) ++ map fst (filterDropped $ map (, node' ctx) $ suc' ctx)
-
-  return $ DFS.xdffWith filterContext node' starts graph
