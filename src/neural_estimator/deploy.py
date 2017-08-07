@@ -6,6 +6,7 @@ import sys
 
 from players import *
 from train import GetProbFunctions
+from common import ProdFeatures
 
 
 def StartPlayer(num_features, learn=True, learning_rate=1e-4, history_level=1,
@@ -16,7 +17,7 @@ def StartPlayer(num_features, learn=True, learning_rate=1e-4, history_level=1,
         net, a = GetProbFunctions(num_features, learning_rate=learning_rate, ret_updates=False)
         u = None
     return NetworkPlayer(net, a, u, reward_length=history_level, history_coeff=history_coeff,
-                         save_iter=1, experiment_name=experiment_name)
+                         save_iter=10000, experiment_name=experiment_name)
 
 
 class IPCWatcher(object):
@@ -24,7 +25,7 @@ class IPCWatcher(object):
     def __init__(self):
         self.num_features = 0
 
-        #query {"action": "settings"}
+    #query {"action": "settings"}
     #answer {"action": "settings", "feature_count": int, "return_prob": bool}
     def readSettings(self):
         query = {'action': 'settings'}
@@ -116,10 +117,12 @@ def Deploy():
     settings = watcher.readSettings()
     num_features = settings['feature_count']
     return_prob = settings['return_prob']
+    num_features = num_features + ((num_features-1) * num_features) // 2
     player = StartPlayer(num_features, False)
     while watcher.readContinueGame():
         edges, inc_matrix, features, valid = watcher.readIncidenceMartix()
         adj_matrix = (np.dot(inc_matrix.T, inc_matrix) > 0).astype('int8')
+        features = ProdFeatures(features)
         if return_prob:
             action, prob = player.getAction(adj_matrix, features, valid, return_prob=True)
             # edge = np.where(inc_matrix[:, action] == 1)[0]
