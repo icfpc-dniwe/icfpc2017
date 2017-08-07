@@ -70,16 +70,20 @@ updateClusters (GameData {..}) (GameState {..}) (a, b) = (newScore, foldr insert
         addMineScore addedNodes n
           | checkMine n = manyMineScore addedNodes n
           | otherwise = 0
-        addOneNode (PlayerCluster {..}) n = addMineScore clusterNodes n + sum (map (oneMineScore n) $ IS.toList clusterMines)
+        addOneNode (PlayerCluster {..}) n = thisMine + otherMines
+          where thisMine = addMineScore clusterNodes n
+                otherMines = sum (map (oneMineScore n) $ IS.toList clusterMines)
         mergeMines addedNodes mines = sum $ map (manyMineScore addedNodes) $ IS.toList mines
 
         (newScore, newCluster) = case (lookupCluster a, lookupCluster b) of
           (Just aCluster, Just bCluster) ->
-            let cluster = PlayerCluster { clusterMines = clusterMines aCluster `IS.union` clusterMines bCluster
-                                        , clusterNodes = clusterNodes aCluster `IS.union` clusterNodes bCluster
-                                        }
-                score = mergeMines (clusterNodes aCluster) (clusterMines bCluster) + mergeMines (clusterNodes bCluster) (clusterMines aCluster)
-            in (score, cluster)
+            if clusterNodes aCluster == clusterNodes bCluster
+            then (0, aCluster)
+            else let cluster = PlayerCluster { clusterMines = clusterMines aCluster `IS.union` clusterMines bCluster
+                                             , clusterNodes = clusterNodes aCluster `IS.union` clusterNodes bCluster
+                                             }
+                     score = mergeMines (clusterNodes aCluster) (clusterMines bCluster) + mergeMines (clusterNodes bCluster) (clusterMines aCluster)
+                 in (score, cluster)
           (Nothing, Just bCluster) ->
             let cluster = PlayerCluster { clusterMines = clusterMines bCluster `IS.union` newMine a
                                         , clusterNodes = IS.insert a $ clusterNodes bCluster

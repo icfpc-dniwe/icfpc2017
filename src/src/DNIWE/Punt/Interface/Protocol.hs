@@ -40,9 +40,10 @@ encodeMessage val = B.pack (show $ B.length encoded) <> ":" <> encoded
 awaitJSON :: (Monad m, FromJSON a) => ConduitM JSON.Value b m a
 awaitJSON = await >>= \case
   Nothing -> fail "Session has been finished prematurely"
-  Just v  -> case fromJSON v of
-    Error e   -> fail e
-    Success x -> return x
+  Just v  -> do
+    case fromJSON v of
+      Error e   -> fail e
+      Success x -> return x
 
 yieldJSON :: (Monad m, ToJSON a) => a -> ConduitM i JSON.Value m ()
 yieldJSON = yield . toJSON
