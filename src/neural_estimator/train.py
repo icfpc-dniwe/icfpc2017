@@ -41,7 +41,7 @@ def GetProbFunctions(num_features, learning_rate=1e-4, ret_updates=True):
 
 
 def TrainPlayers(old_game, players, num_games=1, random_player_prob=0.5, echo_idx=1):
-    num_turns = len(old_game['graph'].edges())
+    num_turns = int(len(old_game['graph'].edges()) * 0.8)
     # if num_turns > 10000:
     #     num_turns //= 10
     # elif num_turns > 1000:
@@ -80,7 +80,6 @@ def TrainPlayers(old_game, players, num_games=1, random_player_prob=0.5, echo_id
                 action_idx = np.where(mask == 1)[0]
                 if len(action_idx) >= 2:
                     features = ProdFeatures(CalcFeatures(game))
-                    player.getAction(adjustment_matrix, features, mask)
                     chosen_action = player.getAction(adjustment_matrix, features, mask)
                     chosen_edge = game['graph'].edges()[chosen_action]
                 else:
@@ -96,5 +95,5 @@ def TrainPlayers(old_game, players, num_games=1, random_player_prob=0.5, echo_id
         # SaveNet(net['desc'], join(weights_path, experiment_name + '_' + str(cur_game_idx) + '.npz'))
         for player in players:
             player.onGameEnd(cur_game_idx)
-        final_winners[cur_game_idx] = np.argmax(game['player_reward'])
+        final_winners[cur_game_idx] = np.argmax(game['player_score'])
     return final_winners
