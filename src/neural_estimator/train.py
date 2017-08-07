@@ -62,7 +62,7 @@ def TrainPlayers(old_game, players, num_games=1, random_player_prob=0.5, echo_id
             start = end
             prev_game_idx = cur_game_idx
         game = deepcopy(old_game)
-        game['current_player'] = np.random.randint(0, game['num_players'])
+        players = np.random.permutation(players)
         for turn_idx in range(num_turns):
             # print('Game idx:', cur_game_idx)
             # print('Turn idx:', turn_idx)
