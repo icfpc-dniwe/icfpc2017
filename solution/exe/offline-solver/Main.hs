@@ -3,6 +3,7 @@ import qualified Data.Aeson as JSON
 import Data.Serialize (Serialize)
 import GHC.Generics (Generic)
 import Data.Conduit (Conduit)
+import Control.Monad.Random
 
 import DNIWE.Punt.Interface.Types
 import DNIWE.Punt.Interface.Offline
@@ -35,8 +36,9 @@ playGame = do
       let stMyId = srPunter setup
           stDepth = 3 * srPunters setup
 
-          (stData, setupResp) = initializeState setup
-          stState = initialState stData
+      (stData, setupResp) <- lift . evalRandIO $ initializeState setup
+
+      let stState = initialState stData
 
       yieldJSON $ StatefulMessage { smState = State {..}
                                   , smMessage = setupResp

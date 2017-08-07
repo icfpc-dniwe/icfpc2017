@@ -9,6 +9,7 @@ module DNIWE.Punt.Interface.Types where
 
 import Data.Char (isUpper, toLower)
 import Control.Applicative
+import Data.Default.Class
 
 import Data.Aeson (ToJSON(..), FromJSON(..), genericParseJSON, genericToJSON, genericToEncoding)
 import Data.Aeson.Types (Options(..), SumEncoding(..), defaultOptions)
@@ -16,7 +17,6 @@ import Data.Aeson.Types (Options(..), SumEncoding(..), defaultOptions)
 import Data.IntSet (IntSet)
 import Data.Text (Text)
 import GHC.Generics (Generic)
-import Data.Default.Class
 
 import DNIWE.Punt.Solver.Types
 
@@ -124,21 +124,23 @@ instance ToJSON BoardMap where
   toJSON = genericToJSON jsonOptions
   toEncoding = genericToEncoding jsonOptions
 
-instance Default GameSettings where
-  def = GameSettings { settingsFutures = False
-                     , settingsSplurges = False
-                     , settingsOptions = False
-                     }
+data SettingsResponse = SettingsResponse { setrespFutures :: Maybe Bool
+                                         , setrespSplurges :: Maybe Bool
+                                         , setrespOptions :: Maybe Bool
+                                         }
+                  deriving (Show, Eq, Generic)
 
-instance FromJSON GameSettings where
+instance Default SettingsResponse
+
+instance FromJSON SettingsResponse where
   parseJSON = genericParseJSON jsonOptions
 
-instance ToJSON GameSettings where
+instance ToJSON SettingsResponse where
   toJSON = genericToJSON jsonOptions
   toEncoding = genericToEncoding jsonOptions
 
 -- S -> P: {"punter" : p, "punters" : n, "map" : map, "settings" : settings}
-data SetupRequest = SetupRequest { srPunter :: PunterId, srPunters :: Int, srMap :: BoardMap, srSettings :: Maybe GameSettings }
+data SetupRequest = SetupRequest { srPunter :: PunterId, srPunters :: Int, srMap :: BoardMap, srSettings :: Maybe SettingsResponse }
     deriving (Show, Eq, Generic)
 
 instance FromJSON SetupRequest where

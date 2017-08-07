@@ -12,6 +12,7 @@ let
     overrides = self: super: {
       mkDerivation = args: super.mkDerivation (args // { enableLibraryProfiling = true; });
       fgl = self.callPackage ./fgl.nix { };
+      #fgl = self.callPackage ./fgl { };
     };
   };
 
