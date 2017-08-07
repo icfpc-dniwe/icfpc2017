@@ -123,6 +123,7 @@ def Deploy():
         edges, inc_matrix, features, valid = watcher.readIncidenceMartix()
         adj_matrix = (np.dot(inc_matrix.T, inc_matrix) > 0).astype('int8')
         features = ProdFeatures(features)
+        edges = edges[valid == 1]
         if return_prob:
             action, prob = player.getAction(adj_matrix, features, valid, return_prob=True)
             # edge = np.where(inc_matrix[:, action] == 1)[0]
