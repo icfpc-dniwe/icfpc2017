@@ -26,8 +26,8 @@ extractSettings (SettingsResponse {..}) =
                , settingsOptions = fromMaybe False setrespOptions
                }
 
-initializeState :: MonadRandom m => SetupRequest -> m (GameData, SetupResponse)
-initializeState setup = do
+initializeState :: MonadRandom m => Int -> SetupRequest -> m (GameData, SetupResponse)
+initializeState depth setup = do
   let board = boardFromMap $ srMap setup
       settings@(GameSettings {..}) = extractSettings $ fromMaybe def $ srSettings setup
       myId = srPunter setup
@@ -35,7 +35,7 @@ initializeState setup = do
   preGame <- gameData board [] myId (srPunters setup) settings
 
   let futures
-        | settingsFutures = take 1 $ mapMaybe (gameMoveToFutureEdge >=> maybeFuture preGame) $ stupidGameTree (3 * srPunters setup) preGame (initialState preGame)
+        | settingsFutures = take 1 $ mapMaybe (gameMoveToFutureEdge >=> maybeFuture preGame) $ stupidGameTree depth preGame (initialState preGame)
         | otherwise = []
       setupResp = SetupResponse { srReady = myId
                                 , srFutures = map (uncurry PFuture) futures

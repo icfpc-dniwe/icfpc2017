@@ -40,7 +40,15 @@ playGame = do
   setup <- awaitJSON
   lift . putStrLn $ "Got setup: " ++ show setup
 
-  (game, setupResp) <- lift . evalRandIO $ initializeState setup
+  let board = boardFromMap $ srMap setup
+  let numNodes = G.noNodes $ sbBoard board
+      stDepth
+        | numNodes < 16 = 3 * srPunters setup
+        | numNodes < 32 = srPunters setup
+        | numNodes < 64 = 2
+        | otherwise = 1
+
+  (game, setupResp) <- lift . evalRandIO $ initializeState stDepth setup
 
   let myId = srPunter setup
       GameSettings {..} = gameSettings game
@@ -55,12 +63,7 @@ playGame = do
           unless (prevMove `elem` movesMoves grMove) $ fail "My move was rejected"
 
           let newState = foldr (applyMove game) state (movesMoves grMove)
-              numNodes = G.noNodes $ sbBoard $ gameStarting game
-              stupidDepth
-                | numNodes < 16 = 3 * gamePlayersN game
-                | numNodes < 32 = gamePlayersN game
-                | otherwise = 1
-              move = makeMove myId $ listToMaybe $ stupidGameTree stupidDepth game newState
+              move = makeMove myId $ listToMaybe $ stupidGameTree stDepth game newState
 
           lift . putStrLn $ "New game state: " ++ show newState
           lift . putStrLn $ ""

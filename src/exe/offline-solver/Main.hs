@@ -35,17 +35,17 @@ playGame = do
   case msg of
     SetupOReq setup -> do
       let stMyId = srPunter setup
-
-      (stData, setupResp) <- lift . evalRandIO $ initializeState setup
-
-      let numNodes = G.noNodes $ sbBoard $ gameStarting stData
+      let board = boardFromMap $ srMap setup
+      let numNodes = G.noNodes $ sbBoard board
           stDepth
             | numNodes < 16 = 3 * srPunters setup
             | numNodes < 32 = srPunters setup
             | numNodes < 64 = 2
             | otherwise = 1
 
-          stState = initialState stData
+      (stData, setupResp) <- lift . evalRandIO $ initializeState stDepth setup
+
+      let stState = initialState stData
 
       yieldJSON $ StatefulMessage { smState = State {..}
                                   , smMessage = setupResp
