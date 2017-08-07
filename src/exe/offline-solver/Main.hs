@@ -4,6 +4,7 @@ import Data.Serialize (Serialize)
 import GHC.Generics (Generic)
 import Data.Conduit (Conduit)
 import Control.Monad.Random
+import Data.Graph.Inductive.Graph as G
 
 import DNIWE.Punt.Interface.Types
 import DNIWE.Punt.Interface.Offline
@@ -34,11 +35,17 @@ playGame = do
   case msg of
     SetupOReq setup -> do
       let stMyId = srPunter setup
-          stDepth = srPunters setup
 
       (stData, setupResp) <- lift . evalRandIO $ initializeState setup
 
-      let stState = initialState stData
+      let numNodes = G.noNodes $ sbBoard $ gameStarting stData
+          stDepth
+            | numNodes < 16 = 3 * srPunters setup
+            | numNodes < 32 = srPunters setup
+            | numNodes < 64 = 2
+            | otherwise = 1
+
+          stState = initialState stData
 
       yieldJSON $ StatefulMessage { smState = State {..}
                                   , smMessage = setupResp
