@@ -36,6 +36,7 @@ library
                    , containers
                    , hashable
                    , bytestring
+                   , vector
                    , text
                    , binary
                    , cereal
@@ -65,8 +66,10 @@ executable stupid-solver
                    , aeson
                    , conduit
                    , transformers
+                   , containers
                    , bytestring
                    , data-default-class
+                   , MonadRandom
   default-extensions: OverloadedStrings
                     , RecordWildCards
                     , LambdaCase
@@ -86,6 +89,7 @@ executable offline-solver
                    , fgl
                    , conduit
                    , data-default-class
+                   , MonadRandom
   default-extensions: OverloadedStrings
                     , RecordWildCards
                     , LambdaCase

@@ -6,15 +6,16 @@ import Control.Monad
 import Control.Monad.Trans.Class (lift)
 import qualified Data.Aeson as JSON (Value)
 import Data.Conduit (Conduit)
-import Data.Default.Class
+import Control.Monad.Random
+import qualified Data.IntMap.Strict as IM
 
 import DNIWE.Punt.Interface.Online
 import DNIWE.Punt.Interface.Protocol
 import DNIWE.Punt.Interface.Types
 import DNIWE.Punt.Interface.Process
+import DNIWE.Punt.Solver.Score
 import DNIWE.Punt.Solver.Types
 import DNIWE.Punt.Solver.Game
-import DNIWE.Punt.Solver.Score (playerScore)
 import DNIWE.Punt.Solver.Stupid
 
 
@@ -38,9 +39,10 @@ playGame = do
   setup <- awaitJSON
   lift . putStrLn $ "Got setup: " ++ show setup
 
+  (game, setupResp) <- lift . evalRandIO $ initializeState setup
+
   let myId = srPunter setup
-      GameSettings {..} = fromMaybe def $ srSettings setup
-      (game, setupResp) = initializeState setup
+      GameSettings {..} = gameSettings game
 
   lift . putStrLn $ "Game data: " ++ show game
   lift . putStrLn $ "Sending setup response: " ++ show setupResp
@@ -67,9 +69,10 @@ playGame = do
           let finalState = foldr (applyMove game) state (prevMove:stopMoves)
           lift . putStrLn $ "Final game state: " ++ show finalState
           lift $ forM_ stopScores $ \(ScoreResponse {..}) -> do
-            let score' = playerScore game $ finalState { statePlayer = scorePunter }
+            let scoreFast = stateScores finalState IM.! scorePunter
+            let scoreSlow = playerScore game $ finalState { statePlayer = scorePunter }
 
-            putStrLn $ "Validating player " ++ show scorePunter ++ " score, server " ++ show scoreScore ++ ", us " ++ show score'
-            unless (scoreScore == score' || (scorePunter /= myId && settingsFutures)) $ fail "Invalid score"
+            putStrLn $ "Validating player " ++ show scorePunter ++ " score, server " ++ show scoreScore ++ ", us fast " ++ show scoreFast ++ ", us slow " ++ show scoreSlow
+            -- unless (scoreScore == score' || (scorePunter /= myId && settingsFutures)) $ fail "Invalid score"
 
   loop (initialState game) (Pass { passPunter = myId })

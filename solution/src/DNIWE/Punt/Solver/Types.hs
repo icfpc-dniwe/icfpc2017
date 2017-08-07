@@ -30,11 +30,12 @@ instance (Hashable k, Hashable a) => Hashable (Map k a) where
 instance (Hashable a) => Hashable (IntMap a) where
   hashWithSalt s m = hashWithSalt s (IM.toAscList m)
 
-type NodeScores = IntMap Int
+type NodeScores = IntMap Score
 
 type Mine = Node
 type MineScores = IntMap NodeScores
-type Mines = IntSet
+type Nodes = IntSet
+type Mines = Nodes
 
 data Future = Future { futureMine :: !Mine
                      , futureTarget :: !Node
@@ -46,6 +47,9 @@ instance NFData Future where
 
 type Futures = IntMap [Future]
 
+type PunterMap a = IntMap a
+type NodeMap a = IntMap a
+
 type Board = Gr () ()
 
 data StartingBoard = StartingBoard { sbBoard :: !Board
@@ -55,8 +59,6 @@ data StartingBoard = StartingBoard { sbBoard :: !Board
 
 instance Serialize StartingBoard where
 instance NFData StartingBoard where
-
-type NearestEdges = IntMap (Set Edge)
 
 data GameSettings = GameSettings { settingsFutures :: !Bool
                                  , settingsSplurges :: !Bool
@@ -73,31 +75,33 @@ data GameData = GameData { gameStarting :: !StartingBoard
                          , gameSettings :: !GameSettings
                          , gameMyId :: !PunterId
                          , gamePlayersN :: !Int
-                         , gameEdgesNearMines :: !NearestEdges
+                         , gameEdgesNearMines :: !(Set Edge)
+                         , gameMaxScore :: !Int
                          }
               deriving (Show, Eq, Generic)
 
 instance Serialize GameData where
 instance NFData GameData where
 
-data GameState = GameState { stateTaken :: !(Map Edge PunterId)
+data PlayerCluster = PlayerCluster { clusterMines :: !Mines
+                                   , clusterNodes :: !Nodes
+                                   }
+                   deriving (Show, Eq, Generic)
+  
+instance Serialize PlayerCluster where
+
+type TakenMap = Map Edge PunterId
+type ClusterMap = NodeMap (PunterMap PlayerCluster)
+
+data GameState = GameState { stateTaken :: !TakenMap
                            , statePlayer :: !PunterId
-                           , stateRemainingOptions :: !(IntMap Int)
+                           , stateRemainingOptions :: !(PunterMap Int)
+                           , stateClusters :: !ClusterMap
+                           , stateScores :: !(PunterMap Score)
                            }
                deriving (Show, Eq, Generic)
 
 instance Serialize GameState where
-instance Hashable GameState where
-
-data Action a = Action { actionEdge :: !Edge
-                       , actionScore :: !a
-                       }
-              deriving (Show, Eq, Generic)
-
-data GameTree a = GameTree { treeState :: !GameState
-                           , treeActions :: [(Action a, GameTree a)]
-                           }
-                deriving (Show, Eq, Generic)
 
 data GameMove = MoveClaim Edge
               | MoveOption Edge

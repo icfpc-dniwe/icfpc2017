@@ -62,6 +62,6 @@ sanitizeEdge gr e@(a, b)
 
 applyMove :: GameData -> Move -> GameState -> GameState
 applyMove _ (Pass _) state = state
-applyMove game (Claim {..}) state = performClaim claimPunter (sanitizeEdge (sbBoard $ gameStarting game) (claimSource, claimTarget)) state
-applyMove game (Splurge {..}) state = performSplurge splurgePunter (map (sanitizeEdge (sbBoard $ gameStarting game)) $ zip (init splurgeRoute) $ drop 1 splurgeRoute) state
-applyMove game (Option {..}) state = performOption optionPunter (sanitizeEdge (sbBoard $ gameStarting game) (optionSource, optionTarget)) state
+applyMove game (Claim {..}) state = performClaim game claimPunter (sanitizeEdge (sbBoard $ gameStarting game) (claimSource, claimTarget)) state
+applyMove game (Splurge {..}) state = performSplurge game splurgePunter (map (sanitizeEdge (sbBoard $ gameStarting game)) $ zip (init splurgeRoute) $ drop 1 splurgeRoute) state
+applyMove game (Option {..}) state = performOption game optionPunter (sanitizeEdge (sbBoard $ gameStarting game) (optionSource, optionTarget)) state
