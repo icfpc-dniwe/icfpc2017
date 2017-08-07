@@ -108,15 +108,17 @@ class IPCWatcher(object):
 
     def writeJSON(self, json_string):
         with open(self.logfile, 'a') as f:
-            print('Output')
-            print('{}:{}'.format(len(json_string), json_string))
+            print('Output', file=f)
+            print('{}:{}'.format(len(json_string), json_string), file=f)
         print('{}:{}'.format(len(json_string), json_string))
 
     def readJSON(self):
+        with open(self.logfile, 'a') as f:
+            print('Awaiting response', file=f)
         answer = input()
         with open(self.logfile, 'a') as f:
-            print('Input')
-            print(answer)
+            print('Input', file=f)
+            print(answer, file=f)
         splitter = answer.find(':')
         json_len = int(answer[:splitter])
         json_string = answer[splitter+1:splitter+json_len+1]
