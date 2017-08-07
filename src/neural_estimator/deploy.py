@@ -13,7 +13,7 @@ from net_tools import LoadNet
 
 
 def StartPlayer(num_features, learn=True, learning_rate=1e-4, history_level=1,
-                history_coeff=0.9, experiment_name='deploy_test', weights='weights/test_middle_newman00_99.npz'):
+                history_coeff=0.9, experiment_name='deploy_test', weights='weights/test_middle_newman1_299.npz'):
     if learn:
         net, a, u = GetProbFunctions(num_features, learning_rate=learning_rate, ret_updates=True)
     else:
