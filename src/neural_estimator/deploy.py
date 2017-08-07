@@ -29,6 +29,8 @@ class IPCWatcher(object):
     def __init__(self):
         self.num_features = 0
         self.logfile = "messages.log"
+        with open(self.logfile, 'a') as f:
+            print('Starting IPCWatcher', file=f)
 
     #query {"action": "settings"}
     #answer {"action": "settings", "feature_count": int, "return_prob": bool}
