@@ -87,7 +87,7 @@ data PlayerCluster = PlayerCluster { clusterMines :: !Mines
                                    , clusterNodes :: !Nodes
                                    }
                    deriving (Show, Eq, Generic)
-  
+
 instance Serialize PlayerCluster where
 
 type TakenMap = Map Edge PunterId
@@ -98,6 +98,8 @@ data GameState = GameState { stateTaken :: !TakenMap
                            , stateRemainingOptions :: !(PunterMap Int)
                            , stateClusters :: !ClusterMap
                            , stateScores :: !(PunterMap Score)
+                           , stateMarginEdges :: !(Set Edge)
+                           , stateMarginWidth :: Int
                            }
                deriving (Show, Eq, Generic)
 

@@ -16,7 +16,8 @@ import DNIWE.Punt.Solver.Score
 
 -- heuristics
 defaultLookupDepth :: Int
-defaultLookupDepth = 3
+-- defaultLookupDepth = 3
+defaultLookupDepth = 1
 
 defaultExperimentsNum :: Int -> Int
 defaultExperimentsNum = (* 2)
@@ -28,8 +29,15 @@ performClaim game p edge state =
   state { stateTaken = M.insert edge p $ stateTaken state
         , stateClusters = newClusters
         , stateScores = IM.insertWith (+) p newScore $ stateScores state
+        , stateMarginEdges = newMarginEdges
         }
   where (newScore, newClusters) = updateClusters game (state { statePlayer = p }) edge
+        newMarginEdges = S.delete edge
+                       . foldr (S.insert) (stateMarginEdges state)
+                       . filter (flip M.notMember (stateTaken state))
+                       . concatMap (\n -> edgesNearNode (stateMarginWidth state) n (sbBoard . gameStarting $ game))
+                       . (\(n1, n2) -> [n1, n2])
+                       $ edge
 
 performOption :: GameData -> PunterId -> Edge -> GameState -> GameState
 performOption game p edge state@(GameState {..})
@@ -75,6 +83,8 @@ initialState game = GameState { stateTaken = M.empty
                                                         else IM.empty
                               , stateClusters = IM.empty
                               , stateScores = IM.fromList $ zip (gamePlayers game) (repeat 0)
+                              , stateMarginEdges = gameEdgesNearMines game
+                              , stateMarginWidth = defaultLookupDepth
                               }
 
 
@@ -87,7 +97,7 @@ maybeFuture game (a, b)
   | bMine && not aMine = Just (b, a)
   | otherwise = Nothing
 
-  where aMine = mineCheck a 
+  where aMine = mineCheck a
         bMine = mineCheck b
         mineCheck n = n `IS.member` sbMines (gameStarting game)
 
