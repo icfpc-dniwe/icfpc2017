@@ -51,28 +51,35 @@ class NetworkPlayer(Player):
             self.inputs = [None for _ in range(reward_length)]
             self.adjustment_matrix = None
 
-    def getAction(self, adjustment_matrix, features, mask):
+    def getAction(self, adjustment_matrix, features, mask, return_prob=False, choose_argmax=False):
         self.adjustment_matrix = adjustment_matrix
         action_idx = np.where(mask == 1)[0]
-        action_prob = self.action_fn(self.adjustment_matrix, features, mask)
+        action_prob = self.action_fn(self.adjustment_matrix, features, mask).squeeze()
         # print('  Maximum prob:', np.max(action_prob))
         # print('  Random:', 1 / len(action_idx))
         if np.any(np.isnan(action_prob)):
             print('OUCH!!!!')
             input()
-        chosen_action = np.random.choice(action_idx, size=1, p=action_prob.squeeze())[0]
-        return chosen_action
+        if choose_argmax:
+            chosen_action = np.argmax(action_prob)
+            chosen_action = action_idx[chosen_action]
+        else:
+            chosen_action = np.random.choice(action_idx, size=1, p=action_prob)[0]
+        if return_prob:
+            return chosen_action, action_prob
+        else:
+            return chosen_action
 
     def updateParams(self, adjustment_matrix, features, mask, reward):
         if self.update_fn is None:
-            return
+            return None
         self.applyUpdates()
         self.rewards += [reward]
         self.inputs += [[features, mask]]
 
     def onGameEnd(self, cur_game_idx):
         if self.update_fn is None:
-            return
+            return None
         while len(self.rewards) > 0:
             self.applyUpdates()
         self.rewards = [0] * self.reward_length
@@ -82,7 +89,7 @@ class NetworkPlayer(Player):
 
     def applyUpdates(self):
         if self.update_fn is None or len(self.inputs) <= 0:
-            return
+            return None
         if self.inputs[0] is not None:
             cur_reward = 0
             for old_reward in reversed(self.rewards):

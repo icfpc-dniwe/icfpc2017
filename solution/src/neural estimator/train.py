@@ -40,12 +40,12 @@ def GetProbFunctions(num_features, learning_rate=1e-4, ret_updates=True):
 
 def TrainPlayers(old_game, players, num_games=1, random_player_prob=0.5, echo_idx=1):
     num_turns = len(old_game['graph'].edges())
-    if num_turns > 10000:
-        num_turns //= 10
-    elif num_turns > 1000:
-        num_turns //= 4
-    elif num_turns > 100:
-        num_turns //= 2
+    # if num_turns > 10000:
+    #     num_turns //= 10
+    # elif num_turns > 1000:
+    #     num_turns //= 4
+    # elif num_turns > 100:
+    #     num_turns //= 2
     adjustment_matrix = nx.incidence_matrix(old_game['graph']).astype('int8').todense()
     adjustment_matrix = (np.dot(adjustment_matrix.T, adjustment_matrix) > 0).astype('int8')
     final_winners = [0] * num_games
@@ -60,6 +60,7 @@ def TrainPlayers(old_game, players, num_games=1, random_player_prob=0.5, echo_id
             start = end
             prev_game_idx = cur_game_idx
         game = deepcopy(old_game)
+        game['current_player'] = np.random.randint(0, game['num_players'])
         for turn_idx in range(num_turns):
             # print('Game idx:', cur_game_idx)
             # print('Turn idx:', turn_idx)

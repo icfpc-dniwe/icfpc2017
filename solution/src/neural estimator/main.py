@@ -52,24 +52,31 @@ def prep():
     def net_player(name, length, history_coeff=0.5, net=None, a=None, u=None, save_iter=50):
         if net is None or a is None or u is None:
             net, a, u = GetProbFunctions(10)
-        return NetworkPlayer(net, a, u, length, history_coeff, save_iter=save_iter, experiment_name='test' + name)
+        return NetworkPlayer(net, a, u, length, history_coeff, save_iter=save_iter, experiment_name='test_middle' + name)
     game = GenerateGame(2, 2, 'small')
     net, a, u = GetProbFunctions(10)
+    # LoadNet(net['desc'], 'weights/test_middle_small1_999.npz')
     players = [net_player('_small0', 1, 0, net, a, u, 500), RandomPlayer()]
-    winners = TrainPlayers(game, players, 1000, 0.1, echo_idx=500)
+    winners = TrainPlayers(game, players, 10000, 0.0, echo_idx=1000)
     print('_small0:', Counter(winners))
     net2, a2, u2 = GetProbFunctions(10)
-    LoadNet(net2['desc'], 'weights/test_small0_499.npz')
+    LoadNet(net2['desc'], 'weights/test_middle_small0_4999.npz')
     players = [net_player('_small1', 2, 0.5, net, a, u, 500), net_player('05', 1, 0, net2, a2, None, save_iter=10000)]
-    winners = TrainPlayers(game, players, 1000, 0.01, echo_idx=500)
+    winners = TrainPlayers(game, players, 10000, 0.00, echo_idx=1000)
     print('_small1:', Counter(winners))
-    game = GenerateGame(4, 6, 'newman')
-    LoadNet(net2['desc'], 'weights/test_small1_999.npz')
+    game = GenerateGame(3, 4, 'newman')
+    LoadNet(net2['desc'], 'weights/test_middle_small1_9999.npz')
+    players = [net_player('_newman0', 10, 0.8, net, a, u, save_iter=10),
+               net_player('_newman1', 4, 0.9, net2, a2, u2, save_iter=10),
+               RandomPlayer()]
+    winners = TrainPlayers(game, players, 1000, 0.0, echo_idx=10)
+    print('_newman1:', Counter(winners))
     net3, a3, u3 = GetProbFunctions(10)
-    LoadNet(net3['desc'], 'weights/test_small1_999.npz')
-    players = [net_player('_newman0', 10, 0.6, net, a, u, save_iter=5),
-               net_player('_newman1', 4, 0.8, net2, a2, u2, save_iter=5),
-               net_player('_newman2', 2, 0.9, net3, a3, u3, save_iter=5),
+    LoadNet(net3['desc'], 'weights/test_middle_newman0_999.npz')
+    game = GenerateGame(4, 5, 'newman')
+    players = [net_player('_newman00', 10, 0.8, net, a, u, save_iter=5),
+               net_player('_newman11', 4, 0.9, net2, a2, u2, save_iter=5),
+               net_player('_newman22', 16, 0.8, net3, a3, u3, save_iter=5),
                RandomPlayer()]
     winners = TrainPlayers(game, players, 200, 0.0, echo_idx=10)
     print('_newman2:', Counter(winners))

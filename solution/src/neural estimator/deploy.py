@@ -2,6 +2,7 @@ import numpy as np
 import socket
 import json
 import argparse
+import sys
 
 from players import *
 from train import GetProbFunctions
@@ -24,9 +25,17 @@ class IPCWatcher(object):
         pass
 
     #query {"action": "settings"}
-    #answer {"action": "settings", "feature_count": int}
+    #answer {"action": "settings", "feature_count": int, "return_prob": bool}
     def readSettings(self):
-        pass
+        query = {'action': 'settings'}
+        self.writeJSON(json.dumps(query))
+        answer = json.loads(self.readJSON())
+        if answer['action'] == 'settings':
+            settings = dict()
+            settings['feature_count'] = answer['feature_count']
+            settings['return_prob'] = answer['return_prob']
+        else:
+            raise RuntimeError
 
     #query {"action": "incidence_matrix"}
     #answer {"action": "incidence_matrix", "values": [{"edge": {src": int, "dst": int}, "features": double4, "valid": bool}]}
@@ -38,7 +47,7 @@ class IPCWatcher(object):
 
     #query {"action": "put_probabilities", "values": [{"edge": {src": int, "dst": int}, "probability": double}]}
     #answer {"action": "put_probabilities", "reward": double}
-    def writeProbabilities(self, prod):
+    def writeProbabilities(self, edges, prob):
         # Write probabilities and for each interested edge and read reward
         pass
 
@@ -51,19 +60,42 @@ class IPCWatcher(object):
     # query {"action": "finished"}
     # answer {"action": "finished", "finished": bool}
     def readContinueGame(self):
-        pass
+        query = {'action': 'finished'}
+        self.writeJSON(json.dumps(query))
+        answer = json.loads(self.readJSON())
+        if answer['action'] == 'finished':
+            return not answer['finished']
+        else:
+            raise RuntimeError
+
+    def writeJSON(self, json_string):
+        print('{}:{}'.format(len(json_string), json_string))
+
+    def readJSON(self):
+        answer = input()
+        splitter = answer.find(':')
+        json_len = int(answer[:splitter])
+        json_string = answer[splitter+1:splitter+json_len+1]
+        return json_string
 
 
 def Deploy()
     watcher = IPCWatcher()
-    num_features = watcher.readSettings()
-    player = StartPlayer(num_features)
+    settings = watcher.readSettings()
+    num_features = settings['feature_count']
+    return_prob = settings['return_prob']
+    player = StartPlayer(num_features, False)
     while watcher.readContinueGame():
-        inc_matrix, features, valid = watcher.readIncidenceMartix()
+        edges, inc_matrix, features, valid = watcher.readIncidenceMartix()
         adj_matrix = (np.dot(inc_matrix.T, inc_matrix) > 0).astype('int8')
-        action = player.getAction(adj_matrix, features, valid)
-        edge = np.where(inc_matrix[:, action] == 1)[0]
-        reward = watcher.writeAction(edge)
+        if return_prob:
+            action, prob = player.getAction(adj_matrix, features, valid, return_prob=True)
+            # edge = np.where(inc_matrix[:, action] == 1)[0]
+            reward = watcher.writeProbabilities(edges, prob)
+        else:
+            action = player.getAction(adj_matrix, features, valid)
+            edge = edges[np.where(inc_matrix[:, action] == 1)[0]]
+            reward = watcher.writeAction(edge)
         player.updateParams(adj_matrix, features, valid, reward)
     player.onGameEnd(0)
 
