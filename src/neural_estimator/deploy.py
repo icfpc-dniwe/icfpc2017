@@ -28,6 +28,7 @@ class IPCWatcher(object):
 
     def __init__(self):
         self.num_features = 0
+        self.logfile = "messages.log"
 
     #query {"action": "settings"}
     #answer {"action": "settings", "feature_count": int, "return_prob": bool}
@@ -106,10 +107,16 @@ class IPCWatcher(object):
         return not answer['finished']
 
     def writeJSON(self, json_string):
+        with open(self.logfile, 'a') as f:
+            print('Output')
+            print('{}:{}'.format(len(json_string), json_string))
         print('{}:{}'.format(len(json_string), json_string))
 
     def readJSON(self):
         answer = input()
+        with open(self.logfile, 'a') as f:
+            print('Input')
+            print(answer)
         splitter = answer.find(':')
         json_len = int(answer[:splitter])
         json_string = answer[splitter+1:splitter+json_len+1]

@@ -85,9 +85,9 @@ def prep():
     # print('_newman1:', Counter(winners))
     net, a, u = GetProbFunctions(10, learning_rate=1e-5)
     net3, a3, u3 = GetProbFunctions(10, learning_rate=1e-5)
-    LoadNet(net['desc'], 'weights/test_middle_newman00_99.npz')
+    LoadNet(net['desc'], 'weights/test_middle_newman1_299.npz')
     LoadNet(net2['desc'], 'weights/test_middle_newman1_199.npz')
-    LoadNet(net3['desc'], 'weights/test_middle_newman00_99.npz')
+    LoadNet(net3['desc'], 'weights/test_middle_newman1_199.npz')
     game = GenerateGame(4, 5, 'newman')
     players = [net_player('_newman000', 10, 0.8, net, a, u, save_iter=5),
                net_player('_newman111', 4, 0.9, net2, a2, u2, save_iter=5),
