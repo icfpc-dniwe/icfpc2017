@@ -54,7 +54,7 @@ playGame = do
           unless (prevMove `elem` movesMoves grMove) $ fail "My move was rejected"
 
           let newState = foldr (applyMove game) state (movesMoves grMove)
-              move = makeMove myId $ listToMaybe $ stupidGameTree (6) game newState
+              move = makeMove myId $ listToMaybe $ stupidGameTree (gamePlayersN game) game newState
 
           lift . putStrLn $ "New game state: " ++ show newState
           lift . putStrLn $ ""
