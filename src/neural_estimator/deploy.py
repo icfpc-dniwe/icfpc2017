@@ -38,7 +38,7 @@ class IPCWatcher(object):
             raise RuntimeError
 
     #query {"action": "incidence_matrix"}
-    #answer {"action": "incidence_matrix", "edges": [{"src": int, "dst": int, "features": double, "valid": bool}]}
+    #answer {"action": "incidence_matrix", "node_count": int, "edges": [{"src": int, "dst": int, "features": double, "valid": bool}]}
     def readIncidenceMartix(self):
         # Read incidence matrix from json
         # Read features from json (every row has N features for edge) -- "features"
