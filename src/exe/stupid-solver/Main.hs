@@ -7,6 +7,7 @@ import Control.Monad.Trans.Class (lift)
 import qualified Data.Aeson as JSON (Value)
 import Data.Conduit (Conduit)
 import Control.Monad.Random
+import Data.Graph.Inductive.Graph as G
 import qualified Data.IntMap.Strict as IM
 
 import DNIWE.Punt.Interface.Online
@@ -54,7 +55,12 @@ playGame = do
           unless (prevMove `elem` movesMoves grMove) $ fail "My move was rejected"
 
           let newState = foldr (applyMove game) state (movesMoves grMove)
-              move = makeMove myId $ listToMaybe $ stupidGameTree (gamePlayersN game) game newState
+              numNodes = G.noNodes $ sbBoard $ gameStarting game
+              stupidDepth
+                | numNodes < 16 = 3 * gamePlayersN game
+                | numNodes < 32 = gamePlayersN game
+                | otherwise = 1
+              move = makeMove myId $ listToMaybe $ stupidGameTree stupidDepth game newState
 
           lift . putStrLn $ "New game state: " ++ show newState
           lift . putStrLn $ ""
