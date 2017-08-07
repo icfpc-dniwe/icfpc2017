@@ -83,5 +83,3 @@ stupidNextAction n game gstate startStupid = foldl' process (startStupid, SQ.emp
                                         , visitedStates = newVisited
                                         }
                 result = (newScore, newScoreVal, edge)
-  
-{-# INLINE stupidNextAction #-}
