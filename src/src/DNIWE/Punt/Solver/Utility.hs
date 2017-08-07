@@ -47,5 +47,5 @@ edgesNearNode :: Graph gr => Int -> Node -> gr a b -> [Edge]
 edgesNearNode depth m gr = concatMap getEdges $ IS.toList nearNodes
   where nearNodes = IS.fromList $ map (\(n, _) -> n) $ takeWhile (\(_, d) -> d <= depth) $ ulevel m gr
         filterNodes = filter (`IS.member` nearNodes) . map snd
-        getEdges n = map (, m) toNodes ++ map (m, ) fromNodes
+        getEdges n = map (, n) toNodes ++ map (n, ) fromNodes
           where (Just (filterNodes -> toNodes, _, _, filterNodes -> fromNodes), _) = G.match n gr

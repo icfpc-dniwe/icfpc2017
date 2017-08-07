@@ -3,7 +3,7 @@
 
 
 module Main where
-
+{-
 import Control.Monad (liftM2)
 import Data.Proxy (Proxy(..))
 import qualified Data.Foldable as Foldable (toList)
@@ -69,3 +69,7 @@ main = do
         [(1,2), (1,3), (1,4)]
 
   runGame board (Proxy :: Proxy FeatureBased) 3 >>= putStrLn . unlines . map show
+-}
+
+main :: IO ()
+main = return ()
