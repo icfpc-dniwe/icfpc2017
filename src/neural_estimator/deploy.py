@@ -55,7 +55,7 @@ class IPCWatcher(object):
     #answer {"action": "put_probabilities", "reward": double}
     def writeProbabilities(self, edges, prob):
         # Write probabilities and for each interested edge and read reward
-        values = []
+        values = [{'src': e[0], 'dst': e[1], 'probability': p} for (e, p) in zip(edges, prob)]
         query = {'action': 'put_probabilities', 'values': values}
         self.writeJSON(json.dumps(query))
         answer = json.loads(self.readJSON())

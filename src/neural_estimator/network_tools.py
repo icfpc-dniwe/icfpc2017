@@ -138,7 +138,7 @@ def CalcFeatures(game):
     features = np.zeros((len(graph.edges()), 4), dtype='float32')
     for idx, (source, target) in enumerate(graph.edges_iter()):
         features[idx, 0] = EdgePoints(graph, (source, target)) * 1e-2
-        if graph.node[source]['mine'] > 0:
+        if graph.node[source]['mine'] > 0 or graph.node[target]['mine'] > 0:
             features[idx, 1] = 1
         if graph[source][target]['claimed'] == game['current_player']:
             features[idx, 2] = 1
