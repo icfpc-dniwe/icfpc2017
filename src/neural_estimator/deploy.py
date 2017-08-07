@@ -57,6 +57,8 @@ class IPCWatcher(object):
         answer = json.loads(self.readJSON())
         if answer['action'] != 'settings':
             raise RuntimeError
+        with open(self.logfile, 'a') as f:
+            print('Reading matrix', file=f)
         num_edges = len(answer['edges'])
         incidence_matrix = np.zeros((answer['node_count'], num_edges), dtype='int8')
         edges = np.zeros((num_edges, 2), dtype='int32')
@@ -71,6 +73,8 @@ class IPCWatcher(object):
             mask[edge_idx] = 1 if edge['valid'] else 0
             incidence_matrix[src, edge_idx] = 1
             incidence_matrix[dst, edge_idx] = 1
+        with open(self.logfile, 'a') as f:
+            print('Done reading matrix', file=f)
         return edges, incidence_matrix, features, mask
 
     #query {"action": "put_probabilities", "values": [{"src": int, "dst": int, "probability": double}]}
