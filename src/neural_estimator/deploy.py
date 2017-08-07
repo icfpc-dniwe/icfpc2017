@@ -111,7 +111,7 @@ class IPCWatcher(object):
         return json_string
 
 
-def Deploy()
+def Deploy():
     watcher = IPCWatcher()
     settings = watcher.readSettings()
     num_features = settings['feature_count']
