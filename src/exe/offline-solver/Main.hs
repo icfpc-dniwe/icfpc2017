@@ -34,7 +34,7 @@ playGame = do
   case msg of
     SetupOReq setup -> do
       let stMyId = srPunter setup
-          stDepth = 3 * srPunters setup
+          stDepth = srPunters setup
 
       (stData, setupResp) <- lift . evalRandIO $ initializeState setup
 
