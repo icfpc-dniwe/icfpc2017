@@ -93,9 +93,13 @@ def ClaimEdge(game, edge):
                 left_path = player_paths[left_id]
                 right_id = graph.node[edge[1]]['path'][player]
                 right_path = player_paths[right_id]
-                new_path = (left_path[0] + right_path[0], left_path[1].union(right_path[1]).union(added_mines))
+                if left_id == right_id:
+                    new_path = left_path
+                else:
+                    new_path = (left_path[0] + right_path[0], left_path[1].union(right_path[1]).union(added_mines))
                 new_id = left_id
-                player_paths.pop(right_id, None)
+                if left_id == right_id:
+                    player_paths.pop(right_id, None)
             else:
                 # add point (edge[1]) to path
                 new_id = graph.node[edge[0]]['path'][player]
