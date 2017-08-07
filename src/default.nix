@@ -1,8 +1,9 @@
-{ mkDerivation, aeson, attoparsec, base, base64-bytestring, binary
-, bytestring, cereal, conduit, conduit-extra, containers
+{ mkDerivation, aeson, async, attoparsec, base, base64-bytestring
+, binary, bytestring, cereal, conduit, conduit-extra, containers
 , data-default, data-default-class, deepseq, directory, fgl
-, filepath, hashable, hspec, MonadRandom, QuickCheck, stdenv, text
-, transformers, unordered-containers, vector
+, filepath, hashable, hspec, MonadRandom, process, QuickCheck
+, stdenv, stm, stm-chans, streaming-commons, text, transformers
+, unordered-containers, vector
 }:
 mkDerivation {
   pname = "solution";
@@ -11,13 +12,15 @@ mkDerivation {
   isLibrary = true;
   isExecutable = true;
   libraryHaskellDepends = [
-    aeson attoparsec base base64-bytestring binary bytestring cereal
-    conduit conduit-extra containers data-default-class deepseq fgl
-    hashable MonadRandom text unordered-containers
+    aeson async attoparsec base base64-bytestring binary bytestring
+    cereal conduit conduit-extra containers data-default-class deepseq
+    fgl hashable MonadRandom process stm stm-chans streaming-commons
+    text unordered-containers vector
   ];
   executableHaskellDepends = [
     aeson base bytestring cereal conduit containers data-default
-    data-default-class fgl transformers vector
+    data-default-class fgl MonadRandom transformers
+    unordered-containers vector
   ];
   testHaskellDepends = [
     aeson base bytestring containers directory filepath hspec

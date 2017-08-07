@@ -22,6 +22,9 @@ library
                    , DNIWE.Punt.Interface.Protocol
                    , DNIWE.Punt.Interface.Types
                    , DNIWE.Punt.Interface.Process
+                   , DNIWE.Punt.Interface.Utility
+                   , DNIWE.Punt.Estimator.Types
+                   , DNIWE.Punt.Estimator.Protocol
                    , DNIWE.Punt.Solver.Types
                    , DNIWE.Punt.Solver.Score
                    , DNIWE.Punt.Solver.Stupid
@@ -45,10 +48,17 @@ library
                    , conduit
                    , conduit-extra
                    , deepseq
+                   , transformers
                    , MonadRandom
+                   , async
+                   , process
+                   , stm
+                   , stm-chans
+                   , streaming-commons
   default-extensions: FlexibleContexts
                     , OverloadedStrings
                     , RecordWildCards
+                    , BangPatterns
                     , ViewPatterns
                     , DeriveGeneric
                     , LambdaCase
@@ -67,6 +77,9 @@ executable stupid-solver
                    , containers
                    , bytestring
                    , data-default-class
+                   , stm
+                   , fgl
+                   , stm-chans
                    , MonadRandom
   default-extensions: OverloadedStrings
                     , RecordWildCards
@@ -85,6 +98,8 @@ executable offline-solver
                    , aeson
                    , cereal
                    , fgl
+                   , stm
+                   , stm-chans
                    , conduit
                    , data-default-class
                    , MonadRandom

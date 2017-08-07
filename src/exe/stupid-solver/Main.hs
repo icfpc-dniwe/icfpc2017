@@ -1,12 +1,14 @@
 import System.Environment
 import Data.ByteString (ByteString)
 
-import Data.Maybe
 import Control.Monad
 import Control.Monad.Trans.Class (lift)
 import qualified Data.Aeson as JSON (Value)
 import Data.Conduit (Conduit)
+import Control.Concurrent.STM
+import Control.Concurrent.STM.TMQueue
 import Control.Monad.Random
+import Data.Graph.Inductive.Graph
 import qualified Data.IntMap.Strict as IM
 
 import DNIWE.Punt.Interface.Online
@@ -17,20 +19,25 @@ import DNIWE.Punt.Solver.Score
 import DNIWE.Punt.Solver.Types
 import DNIWE.Punt.Solver.Game
 import DNIWE.Punt.Solver.Stupid
+import DNIWE.Punt.Estimator.Protocol
 
 
 gameServer :: ByteString
 gameServer = "punter.inf.ed.ac.uk"
 
+estimatorPath :: FilePath
+estimatorPath = "punter.inf.ed.ac.uk"
+
 main :: IO ()
 main = do
   [portString] <- getArgs
   let port = read portString
-  runJSONClient gameServer port playGame
+  runEstimatorClient estimatorPath $ \gameDataVar gameStateQueue resultQueue -> do
+    runJSONClient gameServer port $ playGame gameDataVar gameStateQueue resultQueue
 
 
-playGame :: Conduit JSON.Value IO JSON.Value
-playGame = do
+playGame :: TMVar GameData -> TMQueue GameState -> TQueue Edge -> Conduit JSON.Value IO JSON.Value
+playGame gameDataVar gameStateQueue resultQueue = do
   lift . putStrLn $ "Starting session"
   yieldJSON $ HandshakeRequest { hrMe = "DNIWE :: a" }
   lift . putStrLn $ "Handshake requested"
@@ -54,7 +61,11 @@ playGame = do
           unless (prevMove `elem` movesMoves grMove) $ fail "My move was rejected"
 
           let newState = foldr (applyMove game) state (movesMoves grMove)
-              move = makeMove myId $ listToMaybe $ stupidGameTree (6) game newState
+
+          let extractMove (MoveClaim e) = e
+              extractMove _ = error "impossible"
+          edge <- lift $ runMove defaultTimeout (\game' state' -> extractMove $ head $ stupidGameTree (2 * gamePlayersN game) game' state') gameDataVar gameStateQueue resultQueue game state
+          let move = makeMove myId (Just (MoveClaim edge))
 
           lift . putStrLn $ "New game state: " ++ show newState
           lift . putStrLn $ ""
@@ -66,6 +77,7 @@ playGame = do
 
         StopReq stop@(StopRequest (Stop {..})) -> do
           lift . putStrLn $ "Got stop: " ++ show stop
+          lift $ atomically $ closeTMQueue gameStateQueue
           let finalState = foldr (applyMove game) state (prevMove:stopMoves)
           lift . putStrLn $ "Final game state: " ++ show finalState
           lift $ forM_ stopScores $ \(ScoreResponse {..}) -> do
