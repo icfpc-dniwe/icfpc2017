@@ -1,3 +1,5 @@
+#!/usr/bin/python3
+# -*- coding: utf-8 -*-
 import theano
 from theano import tensor as T
 from theano import sparse
