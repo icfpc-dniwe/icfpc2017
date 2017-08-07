@@ -29,27 +29,27 @@ class IPCWatcher(object):
         pass
 
     #query {"action": "incidence_matrix"}
-    #answer {"action": "incidence_matrix", "values": [{"edge": {src": int, "dst": int}, "features": double4, "valid": bool}]}
+    #answer {"action": "incidence_matrix", "edges": [{"src": int, "dst": int, "features": double4, "valid": bool}]}
     def readIncidenceMartix(self):
         # Read incidence matrix from json
         # Read features from json (every row has N features for edge) -- "features"
         # Read binary mask for filtering desired edges (=1 if interested in edge, i.e. valid claim) - "valid"
         pass
 
-    #query {"action": "put_probabilities", "values": [{"edge": {src": int, "dst": int}, "probability": double}]}
+    #query {"action": "put_probabilities", "values": [{"src": int, "dst": int, "probability": double}]}
     #answer {"action": "put_probabilities", "reward": double}
     def writeProbabilities(self, prod):
         # Write probabilities and for each interested edge and read reward
         pass
 
-    # query {"action": "claim", "edge": {"src": int, "dst": int}}
-    # answer {"action": "claim", "reward": double}
+    # query {"action": "put_action", "source": int, "target": int}
+    # answer {"action": "put_action", "reward": double}
     def writeAction(self, edge):
         # Write probabilities and for each interested edge and read reward
         pass
 
-    # query {"action": "finished"}
-    # answer {"action": "finished", "finished": bool}
+    # query {"action": "is_finished"}
+    # answer {"action": "is_finished", "is_finished": bool}
     def readContinueGame(self):
         pass
 

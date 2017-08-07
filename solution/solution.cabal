@@ -19,7 +19,6 @@ library
   hs-source-dirs:    src
   exposed-modules:   DNIWE.Punt.Interface.Online
                    , DNIWE.Punt.Interface.Offline
-                   , DNIWE.Punt.Interface.Internal
                    , DNIWE.Punt.Interface.Protocol
                    , DNIWE.Punt.Interface.Types
                    , DNIWE.Punt.Interface.Process
@@ -30,7 +29,6 @@ library
                    , DNIWE.Punt.Solver.Utility
   build-depends:     base >=4.9 && <4.10
                    , aeson
-                   , aeson-casing
                    , attoparsec
                    , unordered-containers
                    , containers
@@ -47,7 +45,6 @@ library
                    , conduit-extra
                    , deepseq
                    , MonadRandom
-                   , transformers
   default-extensions: FlexibleContexts
                     , OverloadedStrings
                     , RecordWildCards
@@ -119,26 +116,6 @@ executable genetic-solver
   default-language:  Haskell2010
   ghc-options:       -Wall
 
-executable interoperability_test
-  hs-source-dirs:    exe/interoperability_test
-  main-is:           Main.hs
-  build-depends:     base >= 4.7 && < 5.0
-                   , solution
-                   , aeson
-                   , aeson-casing
-                   , conduit
-                   , transformers
-                   , bytestring
-                   , containers
-                   , fgl
-                   , data-default-class
-  default-extensions: OverloadedStrings
-                    , RecordWildCards
-                    , LambdaCase
-                    , ViewPatterns
-                    , ScopedTypeVariables
-  default-language:  Haskell2010
-  ghc-options:       -Wall
 
 test-suite protocol
   type:              exitcode-stdio-1.0
