@@ -1,9 +1,9 @@
 #!/bin/bash
 
-cd solution
+cd src
 cabal update
 cabal sandbox init
 cabal install --dependencies-only
 cabal build offline-solver
 cd ..
-ln -s solution/dist/build/offline-solver/offline-solver punter
+ln -s src/dist/build/offline-solver/offline-solver punter
