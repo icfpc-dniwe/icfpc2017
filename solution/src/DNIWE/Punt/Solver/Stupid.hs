@@ -81,7 +81,7 @@ stupidNextAction n game gstate startStupid = foldl' process (startStupid, SQ.emp
                 newScoreVal = stupidMetric player newScore
                 newVisited = IS.insert newHash $ visitedStates curStupid
                 newMinimum = IM.insertWith max player newScoreVal $ minimumScores curStupid
-                newCanTrim = canTrimScores curStupid || all (`IM.member` newMinimum) [0..gamePlayersN game - 1]
+                newCanTrim = canTrimScores curStupid || all (`IM.member` newMinimum) (gamePlayers game)
                 newStupid = StupidState { minimumScores = newMinimum
                                         , canTrimScores = newCanTrim
                                         , visitedStates = newVisited

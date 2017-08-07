@@ -127,5 +127,5 @@ test-suite protocol
                    , bytestring
                    , aeson
                    , QuickCheck
-  default-language:    Haskell2010
-  ghc-options: -Wall
+  default-language:  Haskell2010
+  ghc-options:       -Wall

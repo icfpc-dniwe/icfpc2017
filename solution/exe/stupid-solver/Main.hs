@@ -39,7 +39,7 @@ playGame = do
   lift . putStrLn $ "Got setup: " ++ show setup
 
   let myId = srPunter setup
-      Settings {..} = fromMaybe def $ srSettings setup
+      GameSettings {..} = fromMaybe def $ srSettings setup
       (game, setupResp) = initializeState setup
 
   lift . putStrLn $ "Game data: " ++ show game

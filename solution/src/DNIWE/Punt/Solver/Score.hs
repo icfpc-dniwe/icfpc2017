@@ -1,5 +1,6 @@
 module DNIWE.Punt.Solver.Score where
 
+import qualified Data.IntSet as IS
 import qualified Data.Set as S
 import qualified Data.IntMap.Strict as IM
 import qualified Data.Map.Strict as M
@@ -18,14 +19,14 @@ futuresScoringFunction :: Int -> Score
 futuresScoringFunction = (^ (3 :: Int))
 
 boardScores :: StartingBoard -> MineScores
-boardScores (StartingBoard {..}) = IM.unionsWith IM.union $ map scoreOne $ S.toList sbMines
+boardScores (StartingBoard {..}) = IM.unionsWith IM.union $ map scoreOne $ IS.toList sbMines
   where scoreOne mine = IM.singleton mine $ IM.fromList $ BFS.level mine $ undir sbBoard
 
 playerScore :: GameData -> GameState -> Score
 playerScore (GameData {..}) state@(GameState {..}) = totalDefault + futureDefault
   where curReachable = mineReachable (sbBoard gameStarting) state
 
-        totalDefault = sum $ concatMap (\m -> map (defaultScore m) $ curReachable m) $ S.toList $ sbMines gameStarting
+        totalDefault = sum $ concatMap (\m -> map (defaultScore m) $ curReachable m) $ IS.toList $ sbMines gameStarting
         futureDefault = sum $ map (\ftr -> futureScore ftr) $ IM.findWithDefault [] statePlayer gameFutures
 
         defaultScore mine n = defaultScoringFunction $ gameScoring IM.! mine IM.! n
@@ -37,7 +38,7 @@ mineReachable board (GameState {..}) start = DFS.xdfsWith (filterContext isTaken
   where isTaken edge = maybe False (== statePlayer) $ M.lookup edge stateTaken
 
 edgesNearMines :: Int -> StartingBoard -> NearestEdges
-edgesNearMines depth (StartingBoard {..}) = foldr1 (IM.union) $ map (\m -> IM.singleton m $ S.fromList $ edgesNearMine m) $ S.toList sbMines
+edgesNearMines depth (StartingBoard {..}) = foldr1 (IM.union) $ map (\m -> IM.singleton m $ S.fromList $ edgesNearMine m) $ IS.toList sbMines
   where nodesNearMine m = map (\(n, _) -> n) $ filter (\(_, d) -> d <= depth) $ BFS.level m sbBoard
         edgesNearMine m = foldr1 (++) $ map (\n -> filter (\(s,t) -> s == n || t == n) $ edges sbBoard) $ nodesNearMine m
 
