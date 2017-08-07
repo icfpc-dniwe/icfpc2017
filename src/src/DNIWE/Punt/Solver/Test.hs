@@ -2,19 +2,15 @@ module DNIWE.Punt.Solver.Test where
 
 import Data.List
 import qualified Data.IntSet as IS
+import qualified Data.IntMap as IM
 import Control.Arrow (second, (***))
+import Data.Function (on)
 import Control.Monad (when)
+import Data.List (sortBy)
 import Data.Graph.Inductive.Graph as G
 import Data.Graph.Inductive.PatriciaTree (Gr)
-import DNIWE.Punt.Solver.Utility hiding (edgesNearNode)
+import DNIWE.Punt.Solver.Utility ()
 import Debug.Trace
-
-
--- edgesNearNode :: Graph gr => Int -> Node -> gr a b -> [Edge]
--- edgesNearNode d m gr = kokoko where
---   nearNodes = IS.fromList . map fst . takeWhile ((<= d) . snd) $ ulevel m gr
---
---   getEdges n = maybe ([], []) (\(ei, _, _, eo) -> (map snd ei, map snd eo)) . fst $ (G.match n gr)
 
 
 edgesNearNode :: Graph gr => Int -> Node -> gr a b -> [Edge]
@@ -39,25 +35,15 @@ edgesNearNode depth m gr = concat [
     $ ulevel m gr
 
 
+ulevel :: Graph gr => Node -> gr a b -> [(Node, Int)]
+ulevel m g = sortBy (compare `on` snd) $ IM.toList (step 1 [m] $ IM.singleton m 0) where
+  step _ [] r = r
+  step d ms r = step (d+1) ns r' where
+    ns = IS.toList . IS.fromList $ filter (flip IM.notMember r) (concatMap nearNodes ms)
+    r' = foldr (\n -> IM.insert n d) r ns
 
-
-{-
-  filterNodes isMarginal
-    = filter (\n -> (n `IS.member` internalNodes) || (not isMarginal && n `IS.member` marginNodes))
-
-  getEdges n = map (,n) toNodes ++ map (n,) fromNodes where
-    isMarginal = n `IS.member` marginNodes
-    filterNodes' = filterNodes isMarginal . map snd
-
-    (toNodes, fromNodes) = maybe
-      ([], [])
-      (\(ei, _, _, eo) -> (filterNodes' ei, filterNodes' eo))
-      $ (fst $ G.match n gr)
-
---     (Just (filterNodes' -> toNodes, _, _, filterNodes' -> fromNodes), _) = G.match n gr
-
-  getAllEdges = concatMap getEdges . IS.toList
--}
+  nearNodes :: Node -> [Node]
+  nearNodes n = maybe [] (\(ni, _, _, no) -> map snd $ ni ++ no) (fst $ G.match n g)
 
 
 mkGraph' :: [Node] -> [Edge] -> Gr () ()
