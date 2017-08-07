@@ -26,7 +26,7 @@ gameServer :: ByteString
 gameServer = "punter.inf.ed.ac.uk"
 
 estimatorPath :: FilePath
-estimatorPath = "punter.inf.ed.ac.uk"
+estimatorPath = "neural_simulator/deploy.py"
 
 main :: IO ()
 main = do

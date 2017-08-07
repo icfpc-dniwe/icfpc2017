@@ -7,6 +7,7 @@ let
   haskellPackages_ = if compiler == "default"
                         then pkgs.haskellPackages
                         else pkgs.haskell.packages.${compiler};
+  lib = pkgs.haskell.lib;
 
   haskellPackages = haskellPackages_.override {
     overrides = self: super: {
@@ -16,7 +17,8 @@ let
     };
   };
 
-  drv = haskellPackages.callPackage ./default.nix {};
+  drv_ = haskellPackages.callPackage ./default.nix {};
+  drv = lib.addBuildDepends drv_ (with pkgs.python3.pkgs; [ networkx numpy Theano Lasagne ]);
 
 in
 
