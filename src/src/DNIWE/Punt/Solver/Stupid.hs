@@ -5,6 +5,7 @@ import Data.IntSet (IntSet)
 import qualified Data.IntSet as IS
 import Data.Sequence (Seq, (<|), ViewL(..))
 import qualified Data.Sequence as SQ
+import qualified Data.Set as S
 import Data.Foldable
 import Data.Ord
 import Data.Graph.Inductive.Graph
@@ -50,7 +51,7 @@ stupidGameTree' ::  Int -> StupidState -> GameData -> GameState -> (StupidState,
 stupidGameTree' 0 curStupid game gstate = (curStupid, finalScore, [])
   where finalScore = initialScore game gstate
 stupidGameTree' n curStupid game gstate = (newStupid, curScore, curEdges)
-  where (newStupid, results) = force $ stupidNextAction n game gstate curStupid $ freeEdges game gstate
+  where (newStupid, results) = force $ stupidNextAction n game gstate curStupid $ S.toList (stateMarginEdges gstate) -- freeEdges game gstate
         curActions = SQ.unstableSortBy (comparing (Down . (\(_, scoreVal, _) -> scoreVal)))  results
         curEdges = map (\(_, _, edge) -> edge) $ toList curActions
         curScore = case SQ.viewl curActions of
